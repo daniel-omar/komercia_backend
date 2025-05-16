@@ -41,6 +41,7 @@ export class SaleService {
 
   async getByFilter(filter: any): Promise<any> {
     const queryParams = this.saleDao.getFiltersSale(filter);
+    console.log(queryParams)
     let sales = await this.saleDao.getByFilter(queryParams);
     sales = sales.map(x => {
       return {
@@ -132,7 +133,7 @@ export class SaleService {
         default:
           break;
       }
-      
+
       console.log({
         id_usuario_registro,
         id_venta: idVenta,

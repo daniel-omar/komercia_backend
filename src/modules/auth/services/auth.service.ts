@@ -43,14 +43,14 @@ export class AuthService {
 
     const permissions = await this.authDao.getPermissions(id_perfil, id_aplicacion);
     const permissionsGroup = permissions.reduce((acc, row) => {
-      const { id_menu, nombre_menu, descripcion_menu, ruta_menu, icono_menu, nombre_accion } = row;
+      const { id_menu, nombre_menu, descripcion_menu, ruta_menu, icono_menu, nombre_accion,id_menu_padre } = row;
       const existente = acc.find(p => p.id_menu === id_menu);
       if (existente) {
         if (!existente.acciones.includes(nombre_accion)) {
           existente.acciones.push(nombre_accion);
         }
       } else {
-        acc.push({ id_menu, nombre_menu, descripcion_menu, ruta_menu, icono_menu, acciones: [nombre_accion] });
+        acc.push({ id_menu, nombre_menu, descripcion_menu, ruta_menu, icono_menu,id_menu_padre, acciones: [nombre_accion] });
       }
       return acc;
     }, []);

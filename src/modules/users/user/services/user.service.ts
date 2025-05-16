@@ -5,6 +5,7 @@ import * as bcryptjs from 'bcryptjs';
 import { CreateUserDto } from '../dto/index';
 
 import { UserDao } from '../dao/user.dao';
+import { User } from '@modules/auth/entities/user.entity';
 
 @Injectable()
 export class UserService {
@@ -43,8 +44,15 @@ export class UserService {
 
   }
 
-  async findById(id_usuario: number): Promise<any> {
-    const user = await this.userDao.findById(id_usuario);
+  async findById(id_usuario: number): Promise<User> {
+    let user = await this.userDao.findById(id_usuario);
+    user = {
+      ...user,
+      perfil: {
+        id_perfil: user.id_perfil,
+        nombre_perfil: user.nombre_perfil
+      }
+    }
 
     return user;
   }

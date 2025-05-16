@@ -32,7 +32,9 @@ export class UserDao {
 
   async findById(id_usuario: number) {
 
-    const user = await this.connection.query(`select * from usuarios where id_usuario=$1 limit 1;`, [id_usuario]);
+    const user = await this.connection.query(`select u.*,p.nombre_perfil from usuarios u
+      inner join perfiles p on p.id_perfil=u.id_perfil
+      where id_usuario=$1 limit 1;`, [id_usuario]);
 
     return user[0];
   }

@@ -38,7 +38,8 @@ export class AuthDao {
           m.ruta_menu,
           m.icono_menu,
           a.id_accion,
-          a.nombre_accion 
+          a.nombre_accion,
+          m.id_menu_padre
       from permisos p
       inner join perfiles pf on pf.id_perfil=p.id_perfil
       inner join menus m on m.id_menu=p.id_menu

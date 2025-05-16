@@ -26,9 +26,13 @@ export class SaleController {
   }
 
   @Get("/get_by_filter")
-  async getByFilter(@Query() query: FiltersSalesDto): Promise<any> {
-    // throw new NotFoundException("gaa")
-    let response = await this.saleService.getByFilter(query);
+  async getByFilter(@Request() req: Request, @Query() query: FiltersSalesDto): Promise<any> {
+    const user: User = req["user"];
+    const body = {
+      ...query,
+      usuario: user
+    }
+    let response = await this.saleService.getByFilter(body);
     return response;
   }
 

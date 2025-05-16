@@ -36,6 +36,18 @@ export class Objects {
     }
   }
 
+  static Pefiles = {
+    VENDEDOR: {
+      id: 1, name: 'vendedor'
+    },
+    SUPERVISOR: {
+      id: 2, name: 'supervisor'
+    },
+    ADMINISTRADOR: {
+      id: 3, name: 'administrador'
+    }
+  }
+
   static Meses = [
     {
       name: "Enero",

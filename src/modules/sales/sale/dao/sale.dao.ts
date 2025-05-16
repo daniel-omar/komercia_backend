@@ -1,3 +1,4 @@
+import { Objects } from '@common/constants/objects';
 import { QueryParamsDto } from '@common/interfaces/query-params.dto';
 import { Injectable } from '@nestjs/common';
 import { Connection, QueryRunner } from 'typeorm';
@@ -35,6 +36,13 @@ export class SaleDao {
       result.params.push(filters.fecha_inicio);
       result.params.push(filters.fecha_fin);
     }
+
+    const { ADMINISTRADOR, SUPERVISOR, VENDEDOR } = Objects.Pefiles;
+    if ([VENDEDOR.name, SUPERVISOR.name].includes(filters.usuario.perfil.nombre_perfil.toLowerCase())) {
+      result.query += ` AND v.id_usuario_registro=$${(result.params.length + 1)}`;
+      result.params.push(filters.usuario.id_usuario);
+    }
+
     result.query += ` AND v.es_activo = $${(result.params.length + 1)}`;
     result.params.push(true);
     return result;

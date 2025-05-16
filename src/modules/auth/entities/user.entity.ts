@@ -11,6 +11,7 @@ export class User {
     numero_telefono: string;
     correo: string;
     id_perfil: number;
+    perfil: any;
     clave: string;
     es_activo: boolean;
 
