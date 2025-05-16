@@ -10,11 +10,15 @@ import { HttpModule } from '@nestjs/axios';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
-import { ExceptionsLoggerFilter } from '@core/exceptions/exceptionsLogger.filter';
+import { ExceptionsLoggerFilter } from '@core/exceptions/exceptions-logger.filter';
 import { AuthGuard } from '@common/guards/auth.guard';
 import { AuthJwtService } from '@modules/auth/services/auth_jwt.service';
 import { UserService } from '@modules/users/user/services/user.service';
 import { UserDao } from '@modules/users/user/dao/user.dao';
+import { ProductsModule } from '@modules/products/products.module';
+import { GeneralModule } from '@modules/general/general.module';
+import { PaymentTypeModule } from '@modules/general/payment_type/payment_type.module';
+import { SaleModule } from '@modules/sales/sale/sale.module';
 
 @Module({
   imports: [
@@ -33,7 +37,10 @@ import { UserDao } from '@modules/users/user/dao/user.dao';
 
     HttpModule,
     AuthModule,
-    UsersModule
+    UsersModule,
+    ProductsModule,
+    GeneralModule,
+    SaleModule
   ],
   controllers: [AppController],
   providers: [

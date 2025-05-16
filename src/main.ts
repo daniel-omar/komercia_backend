@@ -2,8 +2,10 @@ import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
-import { ExceptionsLoggerFilter } from '@core/exceptions/exceptionsLogger.filter';
+import { ExceptionsLoggerFilter } from '@core/exceptions/exceptions-logger.filter';
 import { ValidationPipe } from '@nestjs/common';
+import { ResponseInterceptor } from '@core/interceptors/response.interceptor';
+import { AllExceptionsFilter } from '@core/exceptions/all-exceptions.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -33,8 +35,11 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, options);
   SwaggerModule.setup(process.env.GLOBAL_PREFIX_API!, app, document);
 
+  app.useGlobalInterceptors(new ResponseInterceptor());
+
   const { httpAdapter } = app.get(HttpAdapterHost);
-  app.useGlobalFilters(new ExceptionsLoggerFilter(httpAdapter));
+  // app.useGlobalFilters(new ExceptionsLoggerFilter(httpAdapter));
+  app.useGlobalFilters(new AllExceptionsFilter(httpAdapter));
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -42,6 +47,8 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     })
   );
+
+
 
   await app.listen(process.env.PORT ?? 3000);
 }

@@ -24,12 +24,67 @@ export class Objects {
     INACTIVO: false
   };
 
-  static ParentescoCliente = {
-    PADRE: "Padre",
-    HERMANO: "Hermano",
-    CONYUGUE: "Conyugue",
-    HIJO: "Hijo(a)",
-    OTRO: "Otro"
+  static TiposDescuento = {
+    NONE: {
+      id: 0, name: 'none'
+    },
+    PERCENT: {
+      id: 1, name: 'percent'
+    },
+    FIXED: {
+      id: 2, name: 'fixed'
+    }
   }
+
+  static Meses = [
+    {
+      name: "Enero",
+      shortName: "Ene"
+    },
+    {
+      name: "Febrero",
+      shortName: "Feb"
+    },
+    {
+      name: "Marzo",
+      shortName: "Mar"
+    },
+    {
+      name: "Abril",
+      shortName: "Abr"
+    },
+    {
+      name: "Mayo",
+      shortName: "May"
+    },
+    {
+      name: "Junio",
+      shortName: "Jun"
+    },
+    {
+      name: "Julio",
+      shortName: "Jul"
+    },
+    {
+      name: "Agosto",
+      shortName: "Agos"
+    },
+    {
+      name: "Setiembre",
+      shortName: "Set"
+    },
+    {
+      name: "Octubre",
+      shortName: "Oct"
+    },
+    {
+      name: "Noviembre",
+      shortName: "Nov"
+    },
+    {
+      name: "Diciembre",
+      shortName: "Dic"
+    }
+  ]
 
 }

@@ -21,7 +21,7 @@ export class AuthService {
   async login(loginDto: LoginDto): Promise<LoginResponse> {
 
     // const clave = bcryptjs.hashSync(loginDto.clave, 10);
-    const usuario = await this.authDao.login(loginDto);
+    let usuario = await this.authDao.login(loginDto);
 
     if (!usuario) {
       throw new UnauthorizedException("Credencial de correo no válida");
@@ -37,6 +37,25 @@ export class AuthService {
       usuario: rest,
       token: this.authJwtService.getJwtToken({ id_usuario: usuario.id_usuario })
     };
+  }
+
+  async getPermissions(id_perfil, id_aplicacion): Promise<any> {
+
+    const permissions = await this.authDao.getPermissions(id_perfil, id_aplicacion);
+    const permissionsGroup = permissions.reduce((acc, row) => {
+      const { id_menu, nombre_menu, descripcion_menu, ruta_menu, icono_menu, nombre_accion } = row;
+      const existente = acc.find(p => p.id_menu === id_menu);
+      if (existente) {
+        if (!existente.acciones.includes(nombre_accion)) {
+          existente.acciones.push(nombre_accion);
+        }
+      } else {
+        acc.push({ id_menu, nombre_menu, descripcion_menu, ruta_menu, icono_menu, acciones: [nombre_accion] });
+      }
+      return acc;
+    }, []);
+
+    return permissionsGroup;
   }
 
 }
