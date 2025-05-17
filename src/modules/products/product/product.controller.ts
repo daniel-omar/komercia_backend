@@ -3,6 +3,7 @@ import { ProductService } from './services/product.service';
 
 import { ResponseDto } from 'src/common/interfaces/response.dto';
 import { FilterProductDto } from './dto';
+import { FilterProductsDto } from './dto/filter-products.dto';
 
 @Controller('products/product')
 export class ProductController {
@@ -21,6 +22,12 @@ export class ProductController {
     let response = await this.productService.find(query);
     if (!response) throw new NotFoundException("No encontrado");
 
+    return response;
+  }
+
+  @Get("/get_by_filter")
+  async getByFilter(@Query() query: FilterProductsDto): Promise<ResponseDto> {
+    let response = await this.productService.getByFilter(query);
     return response;
   }
 }

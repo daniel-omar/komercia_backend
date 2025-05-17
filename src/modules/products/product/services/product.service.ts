@@ -31,4 +31,27 @@ export class ProductService {
     return product;
   }
 
+  async getByFilter(filter: any): Promise<any> {
+    const queryParams = this.productDao.getFiltersProducts(filter);
+    let products = await this.productDao.getByFilter(queryParams);
+    products = products.map(x => {
+      return {
+        id_producto: x.id_producto,
+        codigo_producto: x.codigo_producto,
+        nombre_producto: x.nombre_producto,
+        descripcion_producto: x.descripcion_producto,
+        precio_compra: x.precio_compra,
+        precio_venta: x.precio_venta,
+        id_categoria_producto: x.id_categoria_producto,
+        categoria: {
+          id_categoria_producto: x.id_categoria_producto,
+          nombre_categoria: x.nombre_categoria
+        },
+        cantidad_disponible: x.cantidad_total
+      }
+    })
+
+    return products;
+  }
+
 }

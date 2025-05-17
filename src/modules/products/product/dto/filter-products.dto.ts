@@ -1,12 +1,23 @@
-import { Type } from "class-transformer";
-import { IsEmail, IsNumber, IsString, MinLength } from "class-validator";
+import { Transform, Type } from "class-transformer";
+import { IsArray, IsEmail, IsInt, IsNumber, IsOptional, IsString, MinLength } from "class-validator";
 
 export class FilterProductsDto {
 
+    @IsOptional()
     @IsNumber()
     @Type(() => Number)
-    id_producto: string;
+    id_categoria: number;
 
-    @IsString()
-    codigo_producto: string;
-}
+    @IsOptional()
+    @Transform(({ value }) => {
+        if (Array.isArray(value)) {
+            return value.map((val) => parseInt(val, 10));
+        }
+        return typeof value === 'string'
+            ? value.split(',').map((val) => parseInt(val, 10))
+            : [];
+    })
+    @IsArray()
+    @IsInt({ each: true })
+    ids_categoria: number[];
+}   

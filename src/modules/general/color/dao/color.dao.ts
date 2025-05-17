@@ -17,18 +17,21 @@ export class ColorDao {
 
   getFiltersProductColors(filters): QueryParamsDto {
     let result: QueryParamsDto;
-    result = { query: `WHERE 1 = 1`, params: [] };
+    result = { query: '', params: [], conditions: [] };
 
     if (filters.id_producto != undefined) {
-      result.query += ` AND pv.id_producto = $${(result.params.length + 1)}`;
+      result.conditions.push(`pv.id_producto = $${(result.params.length + 1)}`);
       result.params.push(filters.id_producto);
     }
     if (filters.id_talla != undefined) {
-      result.query += ` AND pv.id_talla = $${(result.params.length + 1)}`;
+      result.conditions.push(`pv.id_talla = $${(result.params.length + 1)}`);
       result.params.push(filters.id_talla);
     }
-    result.query += ` AND pv.es_activo = $${(result.params.length + 1)}`;
+    result.conditions.push(`pv.es_activo = $${(result.params.length + 1)}`);
     result.params.push(true);
+
+    result.query = result.conditions.join(' AND ');
+    result.query = `where ${result.query}`;
 
     return result;
   }

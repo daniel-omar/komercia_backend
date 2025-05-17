@@ -21,30 +21,34 @@ export class SaleDao {
 
   getFiltersSale(filters): QueryParamsDto {
     let result: QueryParamsDto;
-    result = { query: `WHERE 1 = 1`, params: [] };
+    result = { query: '', params: [], conditions: [] };
 
     if (filters.id_venta != undefined) {
-      result.query += ` AND v.id_venta = $${(result.params.length + 1)}`;
+      result.conditions.push(`v.id_venta=$${(result.params.length + 1)}`);
       result.params.push(filters.id_venta);
     }
     if (filters.fecha != undefined) {
-      result.query += ` AND to_char(v.fecha_hora_registro,'YYYY-MM-DD') = $${(result.params.length + 1)}`;
+      result.conditions.push(`to_char(v.fecha_hora_registro,'YYYY-MM-DD') = $${(result.params.length + 1)}`);
       result.params.push(filters.fecha);
     }
     if (filters.fecha_inicio != undefined) {
-      result.query += ` AND v.fecha_hora_registro::date between $${(result.params.length + 1)} and $${(result.params.length + 2)}`;
+      result.conditions.push(`v.fecha_hora_registro::date between $${(result.params.length + 1)} and $${(result.params.length + 2)}`);
       result.params.push(filters.fecha_inicio);
       result.params.push(filters.fecha_fin);
     }
 
     const { ADMINISTRADOR, SUPERVISOR, VENDEDOR } = Objects.Pefiles;
     if ([VENDEDOR.name, SUPERVISOR.name].includes(filters.usuario.perfil.nombre_perfil.toLowerCase())) {
-      result.query += ` AND v.id_usuario_registro=$${(result.params.length + 1)}`;
+      result.conditions.push(`v.id_usuario_registro=$${(result.params.length + 1)}`);
       result.params.push(filters.usuario.id_usuario);
     }
 
-    result.query += ` AND v.es_activo = $${(result.params.length + 1)}`;
+    result.conditions.push(`v.es_activo = $${(result.params.length + 1)}`);
     result.params.push(true);
+
+    result.query = result.conditions.join(' AND ');
+    result.query = `where ${result.query}`;
+
     return result;
   }
 
