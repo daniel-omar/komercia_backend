@@ -100,5 +100,57 @@ export class ProductDao {
 
   }
 
+  async getProductVariants(idProducto: number) {
 
+    const products = await this.connection.query(`
+      select 
+          p.id_producto,
+          pv.id_talla,
+          t.nombre_talla,
+          pv.id_color,
+          c.nombre_color,
+          pv.cantidad
+      from productos p
+      left join productos_variantes pv on p.id_producto=pv.id_producto and pv.cantidad>0
+      left join colores c on c.id_color=pv.id_color
+      left join tallas t on t.id_talla=pv.id_talla
+      where
+      p.id_producto=$1
+      ;`, [idProducto]);
+    return products;
+
+  }
+
+  async update(body, connection?: Connection | QueryRunner) {
+    if (!connection) connection = this.connection;
+    try {
+
+      const { id_producto, id_usuario_registro, codigo_producto, nombre_producto, descripcion_producto, precio_compra, precio_venta, id_categoria_producto } = body;
+      const response = await connection.query(`update productos
+       set 
+          id_usuario_actualizacion=$2,
+          fecha_hora_actualizacion=CURRENT_TIMESTAMP,
+          codigo_producto=coalesce($3,codigo_producto), 
+          nombre_producto=$4, 
+          descripcion_producto=coalesce($5,descripcion_producto), 
+          precio_compra=$6, 
+          precio_venta=$7,
+          id_categoria_producto=$8
+       where
+       id_producto=$1
+      returning id_producto;`, [id_producto, id_usuario_registro, codigo_producto, nombre_producto, descripcion_producto, precio_compra, precio_venta, id_categoria_producto]);
+
+      return {
+        message: 'update success',
+        data: response[0],
+        errors: null,
+      };
+
+    } catch (error) {
+      console.log('update.dao error: ', error.message);
+      return {
+        errors: error.message,
+      };
+    }
+  }
 }

@@ -17,11 +17,11 @@ import { ConfigModule } from '@nestjs/config';
   ],
   imports: [
     ConfigModule.forRoot(),
-    
+
     JwtModule.register({
       global: true,
       secret: process.env.JWT_SEED,
-      signOptions: { expiresIn: '6h' }
+      signOptions: { expiresIn: '24h' }
     })
   ]
 })

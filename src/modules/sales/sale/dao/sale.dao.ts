@@ -91,7 +91,8 @@ export class SaleDao {
       left join tipos_descuento td on td.id_tipo_descuento=v.id_tipo_descuento
       inner join usuarios ur on ur.id_usuario=v.id_usuario_registro
       inner join usuarios ua on ua.id_usuario=v.id_usuario_actualizacion
-      ${query};`, params);
+      ${query}
+      order by v.fecha_hora_registro desc;`, params);
     return sales;
 
   }
