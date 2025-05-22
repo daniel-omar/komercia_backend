@@ -52,4 +52,43 @@ export class AuthDao {
     return permissions;
   }
 
-}
+  async saveRefreshToken(idUsuario: number, token: string): Promise<void> {
+    await this.connection.query(`
+      INSERT INTO auth_tokens (id_usuario, refresh_token)
+      VALUES ($1, $2)
+    `, [idUsuario, token]);
+  }
+
+  async updateApplicationRefreshToken(idUsuario: number, token: string, idAplicacion: number): Promise<void> {
+    await this.connection.query(`
+      update auth_tokens set
+        id_aplicacion=$3,
+        fecha_hora_actualizacion=NOW()
+      where
+      id_usuario=$1
+      and refresh_token=$2
+    `, [idUsuario, token, idAplicacion]);
+  }
+
+  async updateStatusRefreshToken(idUsuario: number, token: string, es_activo: boolean): Promise<void> {
+    await this.connection.query(`
+      update auth_tokens set
+        es_activo=$3,
+        fecha_hora_actualizacion=NOW()
+      where
+      id_usuario=$1
+      and refresh_token=$2
+    `, [idUsuario, token, es_activo]);
+  }
+
+
+  async verifyRefreshToken(idUsuario: number, token: string): Promise<boolean> {
+    const result = await this.connection.query(`
+      SELECT * FROM auth_tokens
+      WHERE id_usuario = $1 AND refresh_token = $2 AND es_activo = true
+    `, [idUsuario, token]);
+
+    return result.length > 0;
+  }
+
+} 

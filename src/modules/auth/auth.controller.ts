@@ -1,5 +1,5 @@
 import { Authorization } from '@core/decorators/authorization.decorator';
-import { Body, Controller, Get, Param, Post, Request } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Request, UnauthorizedException } from '@nestjs/common';
 
 import { LoginDto } from './dto/login.dto';
 
@@ -27,4 +27,16 @@ export class AuthController {
         const resp = await this.authService.getPermissions(user.id_perfil, id_aplicacion)
         return resp;
     }
+
+    @Authorization(false)
+    @Post('/refresh')
+    async refresh(@Body() body: { refresh_token: string }): Promise<any> {
+        try {
+            const payload = this.authService.refresh(body.refresh_token);
+            return payload;
+        } catch (e) {
+            throw new UnauthorizedException('Token expirado o inválido');
+        }
+    }
+
 }
