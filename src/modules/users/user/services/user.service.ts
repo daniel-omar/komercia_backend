@@ -44,8 +44,8 @@ export class UserService {
 
   }
 
-  async findById(id_usuario: number): Promise<User> {
-    let user = await this.userDao.findById(id_usuario);
+  async findById(idUsuario: number): Promise<User> {
+    let user = await this.userDao.findById(idUsuario);
     user = {
       ...user,
       perfil: {
@@ -55,6 +55,18 @@ export class UserService {
     }
 
     return user;
+  }
+
+  async getByIdProfile(idPerfil: number): Promise<any> {
+    // console.log(idSale)
+    try {
+      let users = await this.userDao.getByIdProfile(idPerfil);
+
+      return users;
+    } catch (error) {
+      return []
+    }
+
   }
 
 }

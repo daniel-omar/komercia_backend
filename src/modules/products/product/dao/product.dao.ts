@@ -111,7 +111,7 @@ export class ProductDao {
           c.nombre_color,
           pv.cantidad
       from productos p
-      left join productos_variantes pv on p.id_producto=pv.id_producto and pv.cantidad>0
+      inner join productos_variantes pv on p.id_producto=pv.id_producto and pv.cantidad>0
       left join colores c on c.id_color=pv.id_color
       left join tallas t on t.id_talla=pv.id_talla
       where

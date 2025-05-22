@@ -36,11 +36,18 @@ export class SaleDao {
       result.params.push(filters.fecha_inicio);
       result.params.push(filters.fecha_fin);
     }
-
     const { ADMINISTRADOR, SUPERVISOR, VENDEDOR } = Objects.Pefiles;
     if ([VENDEDOR.name, SUPERVISOR.name].includes(filters.usuario.perfil.nombre_perfil.toLowerCase())) {
       result.conditions.push(`v.id_usuario_registro=$${(result.params.length + 1)}`);
       result.params.push(filters.usuario.id_usuario);
+    }
+    if (filters.ids_tipo_pago != undefined && filters.ids_tipo_pago.length > 0) {
+      result.conditions.push(`v.id_tipo_pago=any($${(result.params.length + 1)}::integer[])`);
+      result.params.push(filters.ids_tipo_pago);
+    }
+    if (filters.ids_usuario_registro != undefined && filters.ids_usuario_registro.length > 0) {
+      result.conditions.push(`(v.id_usuario_registro=any($${(result.params.length + 1)}::integer[]) or v.id_usuario_actualizacion=any($${(result.params.length + 1)}::integer[]))`);
+      result.params.push(filters.ids_usuario_registro);
     }
 
     result.conditions.push(`v.es_activo = $${(result.params.length + 1)}`);

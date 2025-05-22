@@ -39,4 +39,21 @@ export class UserDao {
     return user[0];
   }
 
+  async getByIdProfile(id_profile: number, connection?: Connection | QueryRunner) {
+    if (!connection) connection = this.connection;
+
+    const response = await connection.query(`
+      select 
+          id_usuario,
+          nombre,
+          apellido_paterno,
+          apellido_materno,
+          numero_documento,
+          correo
+      from usuarios
+      where 
+      id_perfil=$1;`, [id_profile]);
+    return response;
+  }
+
 }

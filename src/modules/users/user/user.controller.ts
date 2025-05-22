@@ -21,4 +21,10 @@ export class UserController {
     };
   }
 
+  @Get("/get_by_profile/:id_perfil")
+  async getByIdProfile(@Param('id_perfil') idPerfil): Promise<any> {
+    // throw new NotFoundException("gaa")
+    let response = await this.userService.getByIdProfile(idPerfil);
+    return response;
+  }
 }
