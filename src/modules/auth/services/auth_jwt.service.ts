@@ -17,7 +17,7 @@ export class AuthJwtService {
 
     getRefreshToken(payload: JwtPayload) {
         const refreshToken = this.jwtService.sign(payload, {
-            expiresIn: '7d',
+            expiresIn: process.env.JWT_REFRESH_EXPIRE,
             secret: process.env.JWT_REFRESH_SECRET, // usar otro secreto para seguridad
         });
 

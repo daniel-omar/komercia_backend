@@ -75,6 +75,8 @@ export class AuthService {
 
     const newAccessToken = this.authJwtService.getJwtToken({ id_usuario: payload.id_usuario });
 
-    return { token: newAccessToken };
+    return {
+      token: newAccessToken
+    };
   }
 }

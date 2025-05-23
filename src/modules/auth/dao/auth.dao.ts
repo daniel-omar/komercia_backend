@@ -54,9 +54,9 @@ export class AuthDao {
 
   async saveRefreshToken(idUsuario: number, token: string): Promise<void> {
     await this.connection.query(`
-      INSERT INTO auth_tokens (id_usuario, refresh_token)
-      VALUES ($1, $2)
-    `, [idUsuario, token]);
+      INSERT INTO auth_tokens (id_usuario, refresh_token,expire_time,expire_time_refresh)
+      VALUES ($1, $2,$3,$4)
+    `, [idUsuario, token, process.env.JWT_EXPIRE, process.env.JWT_REFRESH_EXPIRE]);
   }
 
   async updateApplicationRefreshToken(idUsuario: number, token: string, idAplicacion: number): Promise<void> {
