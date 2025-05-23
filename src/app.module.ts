@@ -33,6 +33,15 @@ import { SaleModule } from '@modules/sales/sale/sale.module';
       database: process.env.TYPEORM_DATABASE,
       // logging: true,
       synchronize: false,
+      ssl: process.env.POSTGRES_SSL === "true",
+      extra: {
+        ssl:
+          process.env.POSTGRES_SSL === "true"
+            ? {
+              rejectUnauthorized: false,
+            }
+            : null,
+      },
     }),
 
     HttpModule,
