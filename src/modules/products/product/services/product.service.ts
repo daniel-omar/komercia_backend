@@ -212,7 +212,7 @@ export class ProductService {
       console.log(productosCarga)
 
       const data = productosCarga.data;
-      let observacion = data.total_filas_incorrectas > 0 ? 'Se presentaron observacioens al realizar la carga' : '';
+      let observacion = data.total_filas_incorrectas > 0 ? 'Se presentaron observaciones en los registros.' : '';
       const updateCarga = await this.cargaDAO.updateCarga(carga.id_carga, data.total_filas, data.total_filas_incorrectas, observacion);
       if (!updateCarga) {
         throw Error("Problema al actualizar carga");

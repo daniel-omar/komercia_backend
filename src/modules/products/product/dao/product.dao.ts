@@ -182,7 +182,7 @@ export class ProductDao {
     if (!connection) connection = this.connection;
     try {
 
-      const queryString = `select total_filas,total_filas_incorrectas total_filas_incorrectas from func_guardar_productos($1,$2)`;
+      const queryString = `select total_filas,total_filas_incorrectas from func_guardar_productos($1,$2)`;
       const saveProductos = await this.connection.query(queryString, [
         id_carga,
         productos
