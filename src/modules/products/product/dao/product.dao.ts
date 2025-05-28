@@ -153,4 +153,52 @@ export class ProductDao {
       };
     }
   }
+
+  async save(body, connection?: Connection | QueryRunner) {
+    if (!connection) connection = this.connection;
+    try {
+
+      const { id_usuario_registro, nombre_producto, descripcion_producto, precio_compra, precio_venta, id_categoria_producto } = body;
+      const response = await connection.query(`
+      insert into productos(nombre_producto, descripcion_producto, precio_compra, precio_venta, id_categoria_producto,id_usuario_registro)
+      values($1,$2,$3,$4,$5,$6)
+      returning id_producto;`, [nombre_producto, descripcion_producto, precio_compra, precio_venta, id_categoria_producto, id_usuario_registro]);
+
+      return {
+        message: 'save success',
+        data: response[0],
+        errors: null,
+      };
+
+    } catch (error) {
+      console.log('save.dao error: ', error.message);
+      return {
+        errors: error.message,
+      };
+    }
+  }
+
+  async saveBulk({ productos, id_carga }, connection?: Connection | QueryRunner) {
+    if (!connection) connection = this.connection;
+    try {
+
+      const queryString = `select total_filas,total_filas_incorrectas total_filas_incorrectas from func_guardar_productos($1,$2)`;
+      const saveProductos = await this.connection.query(queryString, [
+        id_carga,
+        productos
+      ]);
+
+      return {
+        message: 'saveBulk success',
+        data: saveProductos[0],
+        errors: null,
+      };
+
+    } catch (error) {
+      console.log('saveBulk.dao error: ', error.message);
+      return {
+        errors: error.message,
+      };
+    }
+  }
 }
