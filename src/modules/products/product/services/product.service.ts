@@ -7,6 +7,9 @@ import { SaveProductDto } from '../dto/save-product.dto';
 import * as ExcelJS from 'exceljs';
 import { CargaDAO } from '@common/services/dao/carga.dao';
 import { FormatoCargaDAO } from '@common/services/dao/formato-carga.dao';
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import * as QRCode from 'qrcode';
+import * as bwipjs from 'bwip-js';
 
 @Injectable()
 export class ProductService {
@@ -237,4 +240,86 @@ export class ProductService {
 
   }
 
+  POINTS_PER_MM: number = 2.83465;
+  /**
+   * Convierte milímetros a puntos
+   * @param mm Milímetros
+   * @returns Puntos
+   */
+  mmToPt(mm: number): number {
+    return mm * this.POINTS_PER_MM;
+  }
+
+  async generateTags(ids_producto: number[], tipo: string) {
+
+    const queryParams = this.productDao.getFiltersProducts({ ids_producto });
+    let products = await this.productDao.getByFilter(queryParams);
+
+    const pdfDoc = await PDFDocument.create();
+    const width = this.mmToPt(48);
+    const height = this.mmToPt(23);
+    const margin = this.mmToPt(2);
+    const usableWidth = width - margin * 2;   // ~124 pt
+    const usableHeight = height - margin * 2; // 
+
+    for (let index = 0; index < products.length; index++) {
+      const product = products[index];
+      const page = pdfDoc.addPage([width, height]);
+
+      // // Texto
+      // const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      // page.drawText(`Nombre: ${"nombre"}`, {
+      //   x: 10,
+      //   y: 120,
+      //   size: 14,
+      //   font,
+      //   color: rgb(0, 0, 0),
+      // });
+
+      // page.drawText(`Código: ${"codigo"}`, {
+      //   x: 10,
+      //   y: 100,
+      //   size: 12,
+      //   font,
+      //   color: rgb(0.2, 0.2, 0.2),
+      // });
+
+      // Generar código (QR o barras)
+      let imageBytes: Buffer;
+      if (tipo === 'qr') {
+        const qrDataUrl = await QRCode.toDataURL(product.codigo_producto);
+        imageBytes = Buffer.from(qrDataUrl.split(',')[1], 'base64');
+      } else {
+        imageBytes = await bwipjs.toBuffer({
+          bcid: 'code128',
+          text: product.codigo_producto,
+          scaleX: 2.5, // ancho por módulo
+          scaleY: 3,   // altura por módulo
+          height: 8,   // altura sin texto
+          includetext: true
+        });
+      }
+
+      const barcodeImage = await pdfDoc.embedPng(imageBytes);
+      const scaleRatio = Math.min(
+        usableWidth / barcodeImage.width,
+        usableHeight / barcodeImage.height
+      );
+      const scaledWidth = barcodeImage.width * scaleRatio;
+      const scaledHeight = barcodeImage.height * scaleRatio;
+
+      const x = (width - scaledWidth) / 2; // Centrado horizontal
+      const y = (height - scaledHeight) / 2;
+
+      page.drawImage(barcodeImage, {
+        x,
+        y,
+        width: scaledWidth,
+        height: scaledHeight,
+      });
+    }
+
+    const pdfBytes = await pdfDoc.save();
+    return pdfBytes;
+  }
 } 

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, Query, NotFoundException, Put, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, Query, NotFoundException, Put, UseInterceptors, UploadedFile, Res } from '@nestjs/common';
 import { ProductService } from './services/product.service';
 
 import { ResponseDto } from 'src/common/interfaces/response.dto';
@@ -8,6 +8,8 @@ import { User } from '@modules/auth/entities/user.entity';
 import { SaveProductDto } from './dto/save-product.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ExcelService } from '@common/services/excel.service';
+import { TagProductsDto } from './dto/tag-products.dto';
+import { Response } from 'express'; // 👈 Importa de express
 
 @Controller('products/product')
 export class ProductController {
@@ -83,4 +85,14 @@ export class ProductController {
     return responseSave;
   }
 
+  @Post("/generate_tags")
+  async generateTags(@Res() res: Response, @Request() req: Request, @Body() products: TagProductsDto): Promise<any> {
+    const user: User = req["user"];
+
+    const { ids_producto } = products;
+    const bytes = await this.productService.generateTags(ids_producto, "");
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.send(bytes);
+  }
 }

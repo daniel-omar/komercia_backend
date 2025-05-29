@@ -58,6 +58,12 @@ export class ProductDao {
         result.params.push(filters.ids_categoria);
       }
     }
+    if (filters.ids_producto != undefined) {
+      if (filters.ids_producto.length > 0) {
+        result.conditions.push(`p.id_producto = any($${(result.params.length + 1)}::int[])`);
+        result.params.push(filters.ids_producto);
+      }
+    }
     result.conditions.push(`p.es_activo = $${(result.params.length + 1)}`);
     result.params.push(true);
 
