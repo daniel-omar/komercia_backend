@@ -189,7 +189,7 @@ export class ProductDao {
     try {
 
       const queryString = `select total_filas,total_filas_incorrectas from func_guardar_productos($1,$2)`;
-      const saveProductos = await this.connection.query(queryString, [
+      const saveProductos = await connection.query(queryString, [
         id_carga,
         productos
       ]);
@@ -202,6 +202,55 @@ export class ProductDao {
 
     } catch (error) {
       console.log('saveBulk.dao error: ', error.message);
+      return {
+        errors: error.message,
+      };
+    }
+  }
+
+  async saveIncome(body, connection?: Connection | QueryRunner) {
+    if (!connection) connection = this.connection;
+    try {
+
+      const { id_tipo_ingreso, observacion, id_usuario_registro } = body;
+      const response = await connection.query(`
+      insert into ingresos(id_tipo_ingreso,observacion,id_usuario_registro)
+      values($1,$2,$3)
+      returning id_ingreso;`, [id_tipo_ingreso, observacion, id_usuario_registro]);
+
+      return {
+        message: 'saveIncome success',
+        data: response[0],
+        errors: null,
+      };
+
+    } catch (error) {
+      console.log('saveIncome.dao error: ', error.message);
+      return {
+        errors: error.message,
+      };
+    }
+  }
+
+  async saveIncomeBulk({ ingresos, id_ingreso, id_carga }, connection?: Connection | QueryRunner) {
+    if (!connection) connection = this.connection;
+    try {
+      console.log({ ingresos, id_ingreso, id_carga })
+      const queryString = `select total_filas,total_filas_incorrectas from func_guardar_ingresos($1,$2,$3)`;
+      const saveProductos = await connection.query(queryString, [
+        id_carga,
+        id_ingreso,
+        ingresos
+      ]);
+
+      return {
+        message: 'saveIncomeBulk success',
+        data: saveProductos[0],
+        errors: null,
+      };
+
+    } catch (error) {
+      console.log('saveIncomeBulk.dao error: ', error.message);
       return {
         errors: error.message,
       };

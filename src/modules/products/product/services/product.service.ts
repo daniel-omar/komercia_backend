@@ -10,6 +10,7 @@ import { FormatoCargaDAO } from '@common/services/dao/formato-carga.dao';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import * as QRCode from 'qrcode';
 import * as bwipjs from 'bwip-js';
+import { SaveInventoryDto } from '../dto/save-inventory.dto';
 
 @Injectable()
 export class ProductService {
@@ -215,6 +216,104 @@ export class ProductService {
       console.log(productosCarga)
 
       const data = productosCarga.data;
+      let observacion = data.total_filas_incorrectas > 0 ? 'Se presentaron observaciones en los registros.' : '';
+      const updateCarga = await this.cargaDAO.updateCarga(carga.id_carga, data.total_filas, data.total_filas_incorrectas, observacion);
+      if (!updateCarga) {
+        throw Error("Problema al actualizar carga");
+      }
+
+      await queryRunner.commitTransaction();
+
+      return {
+        carga: {
+          id_carga: carga.id_carga,
+          id_formato_carga: formatoCarga.id_formato_carga
+        }
+      };
+
+    } catch (error) {
+      console.log(error);
+      await queryRunner.rollbackTransaction();
+      throw Error(error.message);
+    } finally {
+      await queryRunner.release();
+    }
+
+  }
+
+  public async validSaveIncomeBulk(worksheet: any): Promise<any> {
+
+    const formato = await this.formatoCargaDAO.getFormatoCargaByNombre("Carga Inventario");
+    const formato_detalle = await this.formatoCargaDAO.getFormatoDetalleCargaByIdFormato(formato.id_formato_carga);
+    const formato_alias_columnas = formato_detalle.filter(x => x.es_obligatorio).map(x => x.alias_nombre_columna.toLowerCase());
+
+    const columnas_archivo = worksheet.getRow(2).values.map(x => x.toLowerCase());
+    const columnas_no_encontradas = formato_alias_columnas.filter(x => columnas_archivo.indexOf(x) < 0);
+    if (columnas_no_encontradas.length > 0) {
+      console.log(columnas_no_encontradas)
+      throw Error("Formato del archivo no es el correcto");
+    }
+    const idTipoIngreso = worksheet.getRow(1).values[3] ? worksheet.getRow(1).values[3].result : 0;
+
+    const incomes: SaveInventoryDto[] = [];
+    worksheet.eachRow((row, rowIndex) => {
+      if (rowIndex < 3) return;
+      if (!row.values[1] || !row.values[2] || !row.values[4] || !row.values[6]) return;
+      const saveInventoryItem: SaveInventoryDto = {
+        codigo_producto: row.values[1],
+        talla: row.values[2],
+        id_talla: row.values[3] ? row.values[3].result : 0,
+        color: row.values[4],
+        id_color: row.values[5] ? row.values[5].result : 0,
+        cantidad: row.values[6]
+      }
+      incomes.push(saveInventoryItem)
+    });
+    return {
+      ingresos: incomes,
+      id_tipo_ingreso: idTipoIngreso
+    };
+  }
+
+  async saveIncomeBulk(ingresos: SaveInventoryDto[], id_tipo_ingreso: number, id_usuario_registro: number): Promise<any> {
+
+    const queryRunner = this.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      console.log(ingresos)
+      console.log({ id_tipo_ingreso, id_usuario_registro })
+
+      const formatoCarga = await this.formatoCargaDAO.getFormatoCargaByNombre("Carga Inventario");
+      const carga = await this.cargaDAO.saveCarga(formatoCarga.id_formato_carga, id_usuario_registro);
+      if (!carga.id_carga) {
+        throw Error("Problema al registrar carga");
+      }
+
+      //save
+      const saveIncomeResponse = await this.productDao.saveIncome({
+        id_tipo_ingreso, observacion: null, id_usuario_registro
+      }, queryRunner);
+      console.log(saveIncomeResponse);
+
+      if (saveIncomeResponse.errors) {
+        await this.cargaDAO.updateCarga(carga.id_carga, 0, 0, saveIncomeResponse.errors);
+        throw Error(saveIncomeResponse.errors);
+      }
+      console.log(saveIncomeResponse);
+      const idIngreso = saveIncomeResponse.data.id_ingreso;
+
+      //return carga;
+      const incomesJSON = JSON.stringify(ingresos);
+      const saveIncomeBulkResponse = await this.productDao.saveIncomeBulk({ id_ingreso: idIngreso, ingresos: incomesJSON, id_carga: carga.id_carga }, queryRunner);
+      if (saveIncomeBulkResponse.errors) {
+        await this.cargaDAO.updateCarga(carga.id_carga, 0, 0, saveIncomeBulkResponse.errors);
+        throw Error("Problema al registrar ingreso");
+      }
+      console.log(saveIncomeBulkResponse)
+
+      const data = saveIncomeBulkResponse.data;
       let observacion = data.total_filas_incorrectas > 0 ? 'Se presentaron observaciones en los registros.' : '';
       const updateCarga = await this.cargaDAO.updateCarga(carga.id_carga, data.total_filas, data.total_filas_incorrectas, observacion);
       if (!updateCarga) {

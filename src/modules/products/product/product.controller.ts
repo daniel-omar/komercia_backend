@@ -79,8 +79,30 @@ export class ProductController {
     const excelWorkbook = await this.excelService.loadFromBuffer(file.buffer);
     let worksheet = excelWorkbook.getWorksheet(1);
 
-    const saveProductos = await this.productService.validSaveBulk(worksheet);
-    const responseSave = await this.productService.saveBulk(saveProductos, user.id_usuario);
+    const responseValidation = await this.productService.validSaveBulk(worksheet);
+    if (responseValidation.length <= 0) throw Error("No has ingresado registros.");
+    const responseSave = await this.productService.saveBulk(responseValidation, user.id_usuario);
+
+    return responseSave;
+  }
+
+  @Post("/save_income_bulk")
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        files: 1
+      },
+    }),
+  )
+  async saveIncomeBulk(@UploadedFile() file: Express.Multer.File, @Request() req: Request): Promise<any> {
+    const user: User = req["user"];
+
+    const excelWorkbook = await this.excelService.loadFromBuffer(file.buffer);
+    let worksheet = excelWorkbook.getWorksheet(1);
+
+    const responseValidation = await this.productService.validSaveIncomeBulk(worksheet);
+    if (responseValidation.ingresos.length <= 0) throw Error("No has ingresado registros.");
+    const responseSave = await this.productService.saveIncomeBulk(responseValidation.ingresos, responseValidation.id_tipo_ingreso, user.id_usuario);
 
     return responseSave;
   }
