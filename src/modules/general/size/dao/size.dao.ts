@@ -15,11 +15,12 @@ export class SizeDao {
   }
 
   async getByProduct(idProducto: number): Promise<any> {
-    const colors = await this.connection.query(`select distinct t.* from productos_variantes pv
+    const colors = await this.connection.query(`select distinct t.*,pv.cantidad from productos_variantes pv
     inner join tallas t on t.id_talla=pv.id_talla and t.es_activo=true
     where
     pv.id_producto=$1
-    and pv.es_activo=$2;`, [idProducto, true]);
+    and pv.es_activo=$2
+    and pv.cantidad>0;`, [idProducto, true]);
     return colors;
   }
 

@@ -29,6 +29,7 @@ export class ColorDao {
     }
     result.conditions.push(`pv.es_activo = $${(result.params.length + 1)}`);
     result.params.push(true);
+    result.conditions.push(`pv.cantidad>0`);
 
     result.query = result.conditions.join(' AND ');
     result.query = `where ${result.query}`;
@@ -37,8 +38,8 @@ export class ColorDao {
   }
 
   async getProductColorByFilter({ query, params }: QueryParamsDto): Promise<any> {
-    const colors = await this.connection.query(`select distinct c.* from productos_variantes pv
-    inner join colores c on c.id_color=pv.id_color and c.es_activo=true
+    const colors = await this.connection.query(`select distinct c.*,pv.cantidad from productos_variantes pv
+    inner join colores c on c.id_color=pv.id_color and c.es_activo=true 
     ${query}`, params);
 
     return colors;
