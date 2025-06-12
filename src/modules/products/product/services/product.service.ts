@@ -11,6 +11,8 @@ import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import * as QRCode from 'qrcode';
 import * as bwipjs from 'bwip-js';
 import { SaveInventoryDto } from '../dto/save-inventory.dto';
+import { SaveVariantsDto } from '../dto/save-variants.dto';
+import { TagProductVariantDto } from '../dto/tag-products.dto';
 
 @Injectable()
 export class ProductService {
@@ -66,8 +68,10 @@ export class ProductService {
     return products;
   }
 
-  async getProductVariants(idProducto: number): Promise<any> {
-    let productVariants = await this.productDao.getProductVariants(idProducto);
+  async getProductVariantsGroup(idProducto: number): Promise<any> {
+    const queryParams = this.productDao.getFiltersProductsVariants({ id_producto: idProducto, es_activo: true });
+    console.log(queryParams);
+    let productVariants = await this.productDao.getProductVariantsByFilter(queryParams);
     const resultado = Object.values(
       productVariants.reduce((acc, item) => {
         const idTalla = item.id_talla;
@@ -81,14 +85,44 @@ export class ProductService {
         }
 
         acc[idTalla].detalles.push({
+          codigo_producto_variante: item.codigo_producto_variante,
           id_color: item.id_color,
           nombre_color: item.nombre_color,
-          cantidad: item.cantidad,
+          cantidad: item.cantidad ?? 0,
         });
 
         return acc;
       }, {})
     );
+    console.log(resultado)
+    return resultado;
+  }
+
+  async getProductVariants(idProducto: number): Promise<any> {
+    const queryParams = this.productDao.getFiltersProductsVariants({ id_producto: idProducto });
+    console.log(queryParams)
+    let productVariants = await this.productDao.getProductVariantsByFilter(queryParams);
+    const resultado = productVariants.map(x => {
+      return {
+        codigo_producto_variante: x.codigo_producto_variante,
+        id_producto: x.id_producto,
+        id_talla: x.id_talla,
+        talla: {
+          id_talla: x.id_talla,
+          nombre_talla: x.nombre_talla,
+          codigo_talla: x.codigo_talla
+        },
+        id_color: x.id_color,
+        color: {
+          id_color: x.id_color,
+          nombre_color: x.nombre_color,
+          codigo_color: x.codigo_color
+        },
+        es_activo: x.es_activo,
+        cantidad: x.cantidad ?? 0
+      }
+
+    })
 
     return resultado;
   }
@@ -144,6 +178,38 @@ export class ProductService {
 
       if (saveResponse.errors) throw Error(saveResponse.errors);
       console.log(saveResponse);
+
+      await queryRunner.commitTransaction();
+
+    } catch (error) {
+      console.log(error);
+      await queryRunner.rollbackTransaction();
+      throw Error(error.message);
+    } finally {
+      await queryRunner.release();
+    }
+
+  }
+
+  async saveVariants(saveVariantes: SaveVariantsDto): Promise<void> {
+
+    const queryRunner = this.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      console.log(saveVariantes)
+      const { variantes, id_usuario_registro } = saveVariantes;
+
+      const saveVariantsResponse = await this.productDao.saveVariants(
+        JSON.stringify(variantes),
+        id_usuario_registro,
+        queryRunner
+      );
+      if (saveVariantsResponse.errors) {
+        throw Error(saveVariantsResponse.errors);
+      }
+      console.log(saveVariantsResponse);
 
       await queryRunner.commitTransaction();
 
@@ -416,6 +482,93 @@ export class ProductService {
         width: scaledWidth,
         height: scaledHeight,
       });
+    }
+
+    const pdfBytes = await pdfDoc.save();
+    return pdfBytes;
+  }
+
+  async generateTagsV2(productosVariantes: TagProductVariantDto[], tipo: string) {
+
+    const idsProductoVariante = productosVariantes.map(x => x.id_producto_variante);
+    const queryParams = this.productDao.getFiltersProductsVariants({ ids_producto_variante: idsProductoVariante });
+    let productsVariants = await this.productDao.getProductVariantsByFilter(queryParams);
+
+    const pdfDoc = await PDFDocument.create();
+    const width = this.mmToPt(48);
+    const height = this.mmToPt(23);
+    const margin = this.mmToPt(2);
+    const usableWidth = width - margin * 2;   // ~124 pt
+    const usableHeight = height - margin * 2; // 
+    const lineHeight = this.mmToPt(2);
+    const fontSize = 8;
+
+    for (let index = 0; index < productsVariants.length; index++) {
+      const productVariant = productsVariants[index];
+      const cantidad = productosVariantes.find(x => x.id_producto_variante == productVariant.id_producto_variante)?.cantidad ?? 0;
+
+      for (let subindex = 0; subindex < cantidad; subindex++) {
+        const page = pdfDoc.addPage([width, height]);
+        let textYPosition = usableHeight - this.mmToPt(1); // Posición para el texto del nombre
+
+        // Texto
+        const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+        let text = `${productVariant.nombre_producto}`;
+        let textWidth = font.widthOfTextAtSize(text, fontSize);
+        page.drawText(`${productVariant.nombre_producto}`, {
+          x: (width - textWidth) / 2,
+          y: textYPosition,
+          size: fontSize,
+          font,
+          color: rgb(0, 0, 0),
+        });
+        textYPosition -= lineHeight * 1.5;
+
+        text = `${productVariant.codigo_talla} //  ${productVariant.codigo_color}`;
+        textWidth = font.widthOfTextAtSize(text, fontSize);
+        page.drawText(`${productVariant.codigo_talla} //  ${productVariant.codigo_color}`, {
+          x: (width - textWidth) / 2,
+          y: textYPosition,
+          size: fontSize,
+          font,
+          color: rgb(0, 0, 0),
+        });
+        textYPosition -= lineHeight;
+
+        // Generar código (QR o barras)
+        let imageBytes: Buffer;
+        if (tipo === 'qr') {
+          const qrDataUrl = await QRCode.toDataURL(productVariant.codigo_producto_variante);
+          imageBytes = Buffer.from(qrDataUrl.split(',')[1], 'base64');
+        } else {
+          imageBytes = await bwipjs.toBuffer({
+            bcid: 'code128',
+            text: productVariant.codigo_producto_variante,
+            scaleX: 2.2, // ancho por módulo
+            scaleY: 3,   // altura por módulo
+            height: 7,   // altura sin texto
+            includetext: true
+          });
+        }
+
+        const barcodeImage = await pdfDoc.embedPng(imageBytes);
+        const scaleRatio = Math.min(
+          usableWidth / barcodeImage.width,
+          usableHeight / barcodeImage.height
+        );
+        const scaledWidth = barcodeImage.width * scaleRatio;
+        const scaledHeight = barcodeImage.height * scaleRatio;
+
+        const x = (width - scaledWidth) / 2; // Centrado horizontal
+        const y = textYPosition - scaledHeight;
+
+        page.drawImage(barcodeImage, {
+          x,
+          y,
+          width: scaledWidth,
+          height: scaledHeight,
+        });
+      }
     }
 
     const pdfBytes = await pdfDoc.save();

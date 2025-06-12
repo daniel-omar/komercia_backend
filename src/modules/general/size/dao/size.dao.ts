@@ -10,7 +10,7 @@ export class SizeDao {
   ) { }
 
   async getAll(): Promise<any> {
-    const sizes = await this.connection.query(`select * from tallas where es_activo=$1`, [true]);
+    const sizes = await this.connection.query(`select * from tallas where es_activo=$1 order by id_talla asc`, [true]);
     return sizes;
   }
 
@@ -20,7 +20,8 @@ export class SizeDao {
     where
     pv.id_producto=$1
     and pv.es_activo=$2
-    and pv.cantidad>0;`, [idProducto, true]);
+    and pv.cantidad>0
+    order by t.id_talla asc;`, [idProducto, true]);
     return colors;
   }
 

@@ -106,23 +106,65 @@ export class ProductDao {
 
   }
 
-  async getProductVariants(idProducto: number) {
+  getFiltersProductsVariants(filters): QueryParamsDto {
+    let result: QueryParamsDto;
+    result = { query: '', params: [], conditions: [] };
+
+    if (filters.id_producto != undefined) {
+      result.conditions.push(`p.id_producto = $${(result.params.length + 1)}::int`);
+      result.params.push(filters.id_producto);
+    }
+    if (filters.ids_producto != undefined) {
+      if (filters.ids_producto.length > 0) {
+        result.conditions.push(`p.id_producto = any($${(result.params.length + 1)}::int[])`);
+        result.params.push(filters.ids_producto);
+      }
+    }
+    if (filters.ids_producto_variante != undefined) {
+      if (filters.ids_producto_variante.length > 0) {
+        result.conditions.push(`pv.id_producto_variante = any($${(result.params.length + 1)}::int[])`);
+        result.params.push(filters.ids_producto_variante);
+      }
+    }
+    if (filters.es_activo != undefined) {
+      result.conditions.push(`pv.es_activo = $${(result.params.length + 1)}`);
+      result.params.push(filters.es_activo);
+    }
+    if (filters.tiene_cantidad != undefined) {
+      result.conditions.push(`pv.cantidad>0`);
+    }
+
+    if (result.conditions.length > 0) {
+      result.query = result.conditions.join(' AND ');
+      result.query = `where ${result.query}`;
+    }
+
+    return result;
+  }
+
+  async getProductVariantsByFilter({ query, params }: QueryParamsDto) {
 
     const products = await this.connection.query(`
       select 
+          pv.id_producto_variante,
           p.id_producto,
+          p.nombre_producto,
+          pv.codigo_producto_variante,
           pv.id_talla,
           t.nombre_talla,
+          t.codigo_talla,
           pv.id_color,
           c.nombre_color,
-          pv.cantidad
+          c.codigo_color,
+          pv.cantidad,
+          pv.es_activo
       from productos p
-      inner join productos_variantes pv on p.id_producto=pv.id_producto and pv.cantidad>0
+      inner join productos_variantes pv on p.id_producto=pv.id_producto
       left join colores c on c.id_color=pv.id_color
       left join tallas t on t.id_talla=pv.id_talla
-      where
-      p.id_producto=$1
-      ;`, [idProducto]);
+       ${query}
+      order by pv.id_producto_variante asc
+      ;`, [...params]);
     return products;
 
   }
@@ -172,6 +214,50 @@ export class ProductDao {
 
       return {
         message: 'save success',
+        data: response[0],
+        errors: null,
+      };
+
+    } catch (error) {
+      console.log('save.dao error: ', error.message);
+      return {
+        errors: error.message,
+      };
+    }
+  }
+
+  async saveVariant(body, connection?: Connection | QueryRunner) {
+    if (!connection) connection = this.connection;
+    try {
+
+      const { id_usuario_registro, id_producto, id_talla, id_color } = body;
+      const response = await connection.query(`
+      insert into productos_variantes(id_producto,id_talla,id_color,id_usuario_registro)
+      values($1,$2,$3,$4)
+      returning id_producto_variante,codigo_producto_variante;`, [id_producto, id_talla, id_color, id_usuario_registro]);
+
+      return {
+        message: 'save variant success',
+        data: response[0],
+        errors: null,
+      };
+
+    } catch (error) {
+      console.log('save.dao error: ', error.message);
+      return {
+        errors: error.message,
+      };
+    }
+  }
+
+  async saveVariants(saveVariantsJson, idUsuarioRegistro, connection?: Connection | QueryRunner) {
+    if (!connection) connection = this.connection;
+    try {
+
+      const response = await connection.query(`select func_guardar_productos_variantes from func_guardar_productos_variantes($1,$2)`, [saveVariantsJson, idUsuarioRegistro]);
+
+      return {
+        message: 'save variant success',
         data: response[0],
         errors: null,
       };

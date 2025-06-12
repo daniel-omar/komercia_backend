@@ -8,8 +8,10 @@ import { User } from '@modules/auth/entities/user.entity';
 import { SaveProductDto } from './dto/save-product.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ExcelService } from '@common/services/excel.service';
-import { TagProductsDto } from './dto/tag-products.dto';
+import { TagProductsDto, TagProductsVariantDto } from './dto/tag-products.dto';
 import { Response } from 'express'; // 👈 Importa de express
+import { SaveVariantDto } from './dto/save-variant.dto';
+import { SaveVariantsDto } from './dto/save-variants.dto';
 
 @Controller('products/product')
 export class ProductController {
@@ -34,6 +36,12 @@ export class ProductController {
   @Get("/get_by_filter")
   async getByFilter(@Query() query: FilterProductsDto): Promise<ResponseDto> {
     let response = await this.productService.getByFilter(query);
+    return response;
+  }
+
+  @Get("/get_variants_group/:id_producto")
+  async getVariantsGroup(@Param('id_producto') id_producto): Promise<ResponseDto> {
+    let response = await this.productService.getProductVariantsGroup(id_producto);
     return response;
   }
 
@@ -62,6 +70,14 @@ export class ProductController {
       id_usuario_registro: user.id_usuario
     }
     await this.productService.save(body);
+    return true;
+  }
+
+  @Post("/save_variants")
+  async saveVariants(@Request() req: Request, @Body() body: SaveVariantsDto): Promise<any> {
+    const user: User = req["user"];
+    body.id_usuario_registro = user.id_usuario;
+    await this.productService.saveVariants(body);
     return true;
   }
 
@@ -107,12 +123,23 @@ export class ProductController {
     return responseSave;
   }
 
-  @Post("/generate_tags")
-  async generateTags(@Res() res: Response, @Request() req: Request, @Body() products: TagProductsDto): Promise<any> {
+  // @Post("/generate_tags")
+  // async generateTags(@Res() res: Response, @Request() req: Request, @Body() products: TagProductsDto): Promise<any> {
+  //   const user: User = req["user"];
+
+  //   const { ids_producto } = products;
+  //   const bytes = await this.productService.generateTags(ids_producto, "");
+
+  //   res.setHeader('Content-Type', 'application/pdf');
+  //   res.send(bytes);
+  // }
+
+  @Post("/generate_tags_variantes")
+  async generateTags(@Res() res: Response, @Request() req: Request, @Body() productsVariants: TagProductsVariantDto): Promise<any> {
     const user: User = req["user"];
 
-    const { ids_producto } = products;
-    const bytes = await this.productService.generateTags(ids_producto, "");
+    const { productos_variantes } = productsVariants;
+    const bytes = await this.productService.generateTagsV2(productos_variantes, "");
 
     res.setHeader('Content-Type', 'application/pdf');
     res.send(bytes);

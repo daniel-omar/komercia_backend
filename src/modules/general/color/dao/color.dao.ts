@@ -11,7 +11,7 @@ export class ColorDao {
   ) { }
 
   async getAll(): Promise<any> {
-    const colors = await this.connection.query(`select * from colores where es_activo=$1`, [true]);
+    const colors = await this.connection.query(`select * from colores where es_activo=$1 order by id_color asc`, [true]);
     return colors;
   }
 
@@ -40,7 +40,8 @@ export class ColorDao {
   async getProductColorByFilter({ query, params }: QueryParamsDto): Promise<any> {
     const colors = await this.connection.query(`select distinct c.*,pv.cantidad from productos_variantes pv
     inner join colores c on c.id_color=pv.id_color and c.es_activo=true 
-    ${query}`, params);
+    ${query}
+    order by c.id_color asc`, params);
 
     return colors;
   }
