@@ -12,6 +12,8 @@ import { TagProductsDto, TagProductsVariantDto } from './dto/tag-products.dto';
 import { Response } from 'express'; // 👈 Importa de express
 import { SaveVariantDto } from './dto/save-variant.dto';
 import { SaveVariantsDto } from './dto/save-variants.dto';
+import { FilterProductVariantDto } from './dto/filter-product_variant.dto';
+import { SaveInventoryDto } from './dto/save-inventory.dto';
 
 @Controller('products/product')
 export class ProductController {
@@ -123,6 +125,14 @@ export class ProductController {
     return responseSave;
   }
 
+  @Post("/save_income")
+  async saveIncome(@Request() req: Request, @Body() saveInventory: SaveInventoryDto): Promise<any> {
+    const user: User = req["user"];
+
+    await this.productService.saveIncome(saveInventory.productos_variantes, 1, user.id_usuario);
+    return true;
+  }
+
   // @Post("/generate_tags")
   // async generateTags(@Res() res: Response, @Request() req: Request, @Body() products: TagProductsDto): Promise<any> {
   //   const user: User = req["user"];
@@ -143,5 +153,14 @@ export class ProductController {
 
     res.setHeader('Content-Type', 'application/pdf');
     res.send(bytes);
+  }
+
+  @Get("/find_product_variant")
+  async findProductVariant(@Query() query: FilterProductVariantDto): Promise<ResponseDto> {
+    // throw new NotFoundException("gaa")
+    let response = await this.productService.findProductVariant(query);
+    if (!response) throw new NotFoundException("No encontrado");
+
+    return response;
   }
 }

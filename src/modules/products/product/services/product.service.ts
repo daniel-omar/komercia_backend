@@ -10,7 +10,7 @@ import { FormatoCargaDAO } from '@common/services/dao/formato-carga.dao';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import * as QRCode from 'qrcode';
 import * as bwipjs from 'bwip-js';
-import { SaveInventoryDto } from '../dto/save-inventory.dto';
+import { ProductVariantDto, SaveInventoryDto } from '../dto/save-inventory.dto';
 import { SaveVariantsDto } from '../dto/save-variants.dto';
 import { TagProductVariantDto } from '../dto/tag-products.dto';
 
@@ -104,6 +104,7 @@ export class ProductService {
     let productVariants = await this.productDao.getProductVariantsByFilter(queryParams);
     const resultado = productVariants.map(x => {
       return {
+        id_producto_variante: x.id_producto_variante,
         codigo_producto_variante: x.codigo_producto_variante,
         id_producto: x.id_producto,
         id_talla: x.id_talla,
@@ -307,6 +308,40 @@ export class ProductService {
 
   }
 
+  // public async validSaveIncomeBulk(worksheet: any): Promise<any> {
+
+  //   const formato = await this.formatoCargaDAO.getFormatoCargaByNombre("Carga Inventario");
+  //   const formato_detalle = await this.formatoCargaDAO.getFormatoDetalleCargaByIdFormato(formato.id_formato_carga);
+  //   const formato_alias_columnas = formato_detalle.filter(x => x.es_obligatorio).map(x => x.alias_nombre_columna.toLowerCase());
+
+  //   const columnas_archivo = worksheet.getRow(2).values.map(x => x.toLowerCase());
+  //   const columnas_no_encontradas = formato_alias_columnas.filter(x => columnas_archivo.indexOf(x) < 0);
+  //   if (columnas_no_encontradas.length > 0) {
+  //     console.log(columnas_no_encontradas)
+  //     throw Error("Formato del archivo no es el correcto");
+  //   }
+  //   const idTipoIngreso = worksheet.getRow(1).values[3] ? worksheet.getRow(1).values[3].result : 0;
+
+  //   const incomes: SaveInventoryDto[] = [];
+  //   worksheet.eachRow((row, rowIndex) => {
+  //     if (rowIndex < 3) return;
+  //     if (!row.values[1] || !row.values[2] || !row.values[4] || !row.values[6]) return;
+  //     const saveInventoryItem: SaveInventoryDto = {
+  //       codigo_producto: row.values[1],
+  //       talla: row.values[2],
+  //       id_talla: row.values[3] ? row.values[3].result : 0,
+  //       color: row.values[4],
+  //       id_color: row.values[5] ? row.values[5].result : 0,
+  //       cantidad: row.values[6]
+  //     }
+  //     incomes.push(saveInventoryItem)
+  //   });
+  //   return {
+  //     ingresos: incomes,
+  //     id_tipo_ingreso: idTipoIngreso
+  //   };
+  // }
+
   public async validSaveIncomeBulk(worksheet: any): Promise<any> {
 
     const formato = await this.formatoCargaDAO.getFormatoCargaByNombre("Carga Inventario");
@@ -321,34 +356,31 @@ export class ProductService {
     }
     const idTipoIngreso = worksheet.getRow(1).values[3] ? worksheet.getRow(1).values[3].result : 0;
 
-    const incomes: SaveInventoryDto[] = [];
+    const incomes: ProductVariantDto[] = [];
     worksheet.eachRow((row, rowIndex) => {
       if (rowIndex < 3) return;
-      if (!row.values[1] || !row.values[2] || !row.values[4] || !row.values[6]) return;
-      const saveInventoryItem: SaveInventoryDto = {
-        codigo_producto: row.values[1],
-        talla: row.values[2],
-        id_talla: row.values[3] ? row.values[3].result : 0,
-        color: row.values[4],
-        id_color: row.values[5] ? row.values[5].result : 0,
-        cantidad: row.values[6]
+      if (!row.values[1] || !row.values[2] || !row.values[3]) return;
+      const saveInventoryItem: ProductVariantDto = {
+        id_producto_variante: row.values[1],
+        codigo_producto_variante: row.values[2],
+        cantidad: row.values[3]
       }
       incomes.push(saveInventoryItem)
     });
+
     return {
       ingresos: incomes,
       id_tipo_ingreso: idTipoIngreso
     };
   }
 
-  async saveIncomeBulk(ingresos: SaveInventoryDto[], id_tipo_ingreso: number, id_usuario_registro: number): Promise<any> {
+  async saveIncomeBulk(productsVariants: ProductVariantDto[], id_tipo_ingreso: number, id_usuario_registro: number): Promise<any> {
 
     const queryRunner = this.connection.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      console.log(ingresos)
       console.log({ id_tipo_ingreso, id_usuario_registro })
 
       const formatoCarga = await this.formatoCargaDAO.getFormatoCargaByNombre("Carga Inventario");
@@ -371,8 +403,8 @@ export class ProductService {
       const idIngreso = saveIncomeResponse.data.id_ingreso;
 
       //return carga;
-      const incomesJSON = JSON.stringify(ingresos);
-      const saveIncomeBulkResponse = await this.productDao.saveIncomeBulk({ id_ingreso: idIngreso, ingresos: incomesJSON, id_carga: carga.id_carga }, queryRunner);
+      const incomesJSON = JSON.stringify(productsVariants);
+      const saveIncomeBulkResponse = await this.productDao.saveIncomeDetailsBulk({ id_ingreso: idIngreso, ingreso_detalles: incomesJSON, id_carga: carga.id_carga }, queryRunner);
       if (saveIncomeBulkResponse.errors) {
         await this.cargaDAO.updateCarga(carga.id_carga, 0, 0, saveIncomeBulkResponse.errors);
         throw Error("Problema al registrar ingreso");
@@ -395,6 +427,42 @@ export class ProductService {
         }
       };
 
+    } catch (error) {
+      console.log(error);
+      await queryRunner.rollbackTransaction();
+      throw Error(error.message);
+    } finally {
+      await queryRunner.release();
+    }
+
+  }
+
+  async saveIncome(productsVariants: ProductVariantDto[], id_tipo_ingreso: number, id_usuario_registro: number): Promise<any> {
+
+    const queryRunner = this.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      console.log("productsVariants: ", productsVariants);
+
+      //save
+      const saveIncomeResponse = await this.productDao.saveIncome({
+        id_tipo_ingreso, observacion: null, id_usuario_registro
+      }, queryRunner);
+      console.log(saveIncomeResponse);
+      if (saveIncomeResponse.errors) {
+        throw Error(saveIncomeResponse.errors);
+      }
+      const idIngreso = saveIncomeResponse.data.id_ingreso;
+
+      const incomesJSON = JSON.stringify(productsVariants);
+      const saveIncomeBulkResponse = await this.productDao.saveIncomeDetails({ id_ingreso: idIngreso, ingreso_detalles: incomesJSON }, queryRunner);
+      if (saveIncomeBulkResponse.errors) {
+        throw Error("Problema al registrar ingreso");
+      }
+      console.log(saveIncomeBulkResponse)
+      await queryRunner.commitTransaction();
     } catch (error) {
       console.log(error);
       await queryRunner.rollbackTransaction();
@@ -489,7 +557,7 @@ export class ProductService {
   }
 
   async generateTagsV2(productosVariantes: TagProductVariantDto[], tipo: string) {
-
+    console.log("productosVariantes: ", productosVariantes);
     const idsProductoVariante = productosVariantes.map(x => x.id_producto_variante);
     const queryParams = this.productDao.getFiltersProductsVariants({ ids_producto_variante: idsProductoVariante });
     let productsVariants = await this.productDao.getProductVariantsByFilter(queryParams);
@@ -573,5 +641,35 @@ export class ProductService {
 
     const pdfBytes = await pdfDoc.save();
     return pdfBytes;
+  }
+
+  async findProductVariant(filter: any): Promise<any> {
+    const queryParams = this.productDao.getFiltersProductVariant(filter);
+    const productVariant = await this.productDao.findProductVariant(queryParams);
+
+    if (!productVariant) return null;
+
+    const resultado = {
+      id_producto_variante: productVariant.id_producto_variante,
+      codigo_producto_variante: productVariant.codigo_producto_variante,
+      id_producto: productVariant.id_producto,
+      nombre_producto: productVariant.nombre_producto,
+      id_talla: productVariant.id_talla,
+      talla: {
+        id_talla: productVariant.id_talla,
+        nombre_talla: productVariant.nombre_talla,
+        codigo_talla: productVariant.codigo_talla
+      },
+      id_color: productVariant.id_color,
+      color: {
+        id_color: productVariant.id_color,
+        nombre_color: productVariant.nombre_color,
+        codigo_color: productVariant.codigo_color
+      },
+      es_activo: productVariant.es_activo,
+      cantidad: productVariant.cantidad ?? 0
+    };
+
+    return resultado;
   }
 } 

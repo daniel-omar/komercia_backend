@@ -318,28 +318,95 @@ export class ProductDao {
     }
   }
 
-  async saveIncomeBulk({ ingresos, id_ingreso, id_carga }, connection?: Connection | QueryRunner) {
+  async saveIncomeDetails({ ingreso_detalles, id_ingreso }, connection?: Connection | QueryRunner) {
     if (!connection) connection = this.connection;
     try {
-      console.log({ ingresos, id_ingreso, id_carga })
-      const queryString = `select total_filas,total_filas_incorrectas from func_guardar_ingresos($1,$2,$3)`;
+      console.log({ id_ingreso, ingreso_detalles })
+      const queryString = `select total_filas,total_filas_incorrectas from func_guardar_ingreso_detalles($1,$2)`;
       const saveProductos = await connection.query(queryString, [
-        id_carga,
         id_ingreso,
-        ingresos
+        ingreso_detalles
       ]);
 
       return {
-        message: 'saveIncomeBulk success',
+        message: 'saveIncomeDetails success',
         data: saveProductos[0],
         errors: null,
       };
 
     } catch (error) {
-      console.log('saveIncomeBulk.dao error: ', error.message);
+      console.log('saveIncomeDetails.dao error: ', error.message);
       return {
         errors: error.message,
       };
     }
+  }
+
+  async saveIncomeDetailsBulk({ ingreso_detalles, id_ingreso, id_carga }, connection?: Connection | QueryRunner) {
+    if (!connection) connection = this.connection;
+    try {
+      console.log({ id_ingreso, ingreso_detalles })
+      const queryString = `select total_filas,total_filas_incorrectas from func_guardar_ingreso_detalles_carga($1,$2)`;
+      const saveProductos = await connection.query(queryString, [
+        id_ingreso,
+        ingreso_detalles,
+        id_carga
+      ]);
+
+      return {
+        message: 'saveIncomeDetails success',
+        data: saveProductos[0],
+        errors: null,
+      };
+
+    } catch (error) {
+      console.log('saveIncomeDetails.dao error: ', error.message);
+      return {
+        errors: error.message,
+      };
+    }
+  }
+
+  getFiltersProductVariant(filters): QueryParamsDto {
+    let result: QueryParamsDto;
+    result = { query: '', params: [], conditions: [] };
+
+    if (filters.id_producto_variante != undefined) {
+      result.conditions.push(`pv.id_producto_variante = $${(result.params.length + 1)}`);
+      result.params.push(filters.id_producto_variante);
+    }
+    if (filters.codigo_producto_variante != undefined) {
+      result.conditions.push(`pv.codigo_producto_variante = $${(result.params.length + 1)}`);
+      result.params.push(filters.codigo_producto_variante);
+    }
+
+    if (result.conditions.length > 0) {
+      result.query = result.conditions.join(' AND ');
+      result.query = `where ${result.query}`;
+    }
+
+    return result;
+  }
+
+  async findProductVariant({ query, params }: QueryParamsDto) {
+    const productVariant = await this.connection.query(`select 
+          pv.id_producto_variante,
+          p.id_producto,
+          p.nombre_producto,
+          pv.codigo_producto_variante,
+          pv.id_talla,
+          t.nombre_talla,
+          t.codigo_talla,
+          pv.id_color,
+          c.nombre_color,
+          c.codigo_color,
+          pv.cantidad,
+          pv.es_activo
+      from productos p
+      inner join productos_variantes pv on p.id_producto=pv.id_producto
+      left join colores c on c.id_color=pv.id_color
+      left join tallas t on t.id_talla=pv.id_talla
+       ${query} limit 1;`, params);
+    return productVariant[0];
   }
 }
