@@ -13,6 +13,7 @@ import * as bwipjs from 'bwip-js';
 import { ProductVariantDto, SaveInventoryDto } from '../dto/save-inventory.dto';
 import { SaveVariantsDto } from '../dto/save-variants.dto';
 import { TagProductVariantDto } from '../dto/tag-products.dto';
+import { FilterProductVariantDto } from '../dto/filter-product_variant.dto';
 
 @Injectable()
 export class ProductService {
@@ -569,7 +570,7 @@ export class ProductService {
     const usableWidth = width - margin * 2;   // ~124 pt
     const usableHeight = height - margin * 2; // 
     const lineHeight = this.mmToPt(2);
-    const fontSize = 8;
+    const fontSize = 9;
 
     for (let index = 0; index < productsVariants.length; index++) {
       const productVariant = productsVariants[index];
@@ -612,10 +613,15 @@ export class ProductService {
           imageBytes = await bwipjs.toBuffer({
             bcid: 'code128',
             text: productVariant.codigo_producto_variante,
-            scaleX: 2.2, // ancho por módulo
-            scaleY: 3,   // altura por módulo
-            height: 7,   // altura sin texto
-            includetext: true
+            // scale: 5,   // altura por módulo
+            // scaleX: 3, // ancho por módulo
+            // scaleY: 2, // ancho por módulo
+            height: 13,   // altura sin texto
+            // width: 1,
+            includetext: true,
+            textsize: 15,
+            textfont: 'Courier-Bold',
+            textyoffset: 2,
           });
         }
 
@@ -643,8 +649,9 @@ export class ProductService {
     return pdfBytes;
   }
 
-  async findProductVariant(filter: any): Promise<any> {
+  async findProductVariant(filter: FilterProductVariantDto): Promise<any> {
     const queryParams = this.productDao.getFiltersProductVariant(filter);
+    console.log(queryParams);
     const productVariant = await this.productDao.findProductVariant(queryParams);
 
     if (!productVariant) return null;
@@ -667,7 +674,9 @@ export class ProductService {
         codigo_color: productVariant.codigo_color
       },
       es_activo: productVariant.es_activo,
-      cantidad: productVariant.cantidad ?? 0
+      cantidad: productVariant.cantidad ?? 0,
+      precio_compra: productVariant.precio_compra,
+      precio_venta: productVariant.precio_venta
     };
 
     return resultado;

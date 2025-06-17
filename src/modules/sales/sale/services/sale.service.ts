@@ -184,9 +184,9 @@ export class SaleService {
           precio: x.precio,
           cantidad: x.cantidad,
           id_talla: x.id_talla,
-          talla: { id_talla: x.id_talla, nombre_talla: x.nombre_talla },
+          talla: { id_talla: x.id_talla, nombre_talla: x.nombre_talla, codigo_talla: x.codigo_talla },
           id_color: x.id_color,
-          color: { id_color: x.id_color, nombre_color: x.nombre_color },
+          color: { id_color: x.id_color, nombre_color: x.nombre_color, codigo_color: x.codigo_color },
           sub_total_sugerido: x.sub_total_sugerido,
           sub_total: x.sub_total
         }

@@ -191,8 +191,10 @@ export class SaleDao {
           vd.precio precio,
           vd.cantidad,
           vd.id_talla,
+          t.codigo_talla,
           t.nombre_talla,
           vd.id_color,
+          c.codigo_color,
           c.nombre_color,
           vd.sub_total_sugerido,
           vd.sub_total

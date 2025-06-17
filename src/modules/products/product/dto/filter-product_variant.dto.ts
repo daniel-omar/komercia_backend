@@ -12,6 +12,14 @@ export class FilterProductVariantDto {
     @IsString()
     codigo_producto_variante: string;
 
+    @IsOptional()
+    @IsString()
+    es_activo: boolean;
+
+    @IsOptional()
+    @IsString()
+    tiene_cantidad: boolean;
+
     @AtLeastOneField(['id_producto_variante', 'codigo_producto_variante'])
     _atLeastOneFieldValidator: any;
 }

@@ -157,7 +157,9 @@ export class ProductDao {
           c.nombre_color,
           c.codigo_color,
           pv.cantidad,
-          pv.es_activo
+          pv.es_activo,
+          p.precio_compra,
+          p.precio_venta
       from productos p
       inner join productos_variantes pv on p.id_producto=pv.id_producto
       left join colores c on c.id_color=pv.id_color
@@ -379,6 +381,13 @@ export class ProductDao {
       result.conditions.push(`pv.codigo_producto_variante = $${(result.params.length + 1)}`);
       result.params.push(filters.codigo_producto_variante);
     }
+    if (filters.es_activo != undefined) {
+      result.conditions.push(`pv.es_activo = $${(result.params.length + 1)}`);
+      result.params.push(filters.es_activo);
+    }
+    if (filters.tiene_cantidad != undefined) {
+      result.conditions.push(`pv.cantidad>0`);
+    }
 
     if (result.conditions.length > 0) {
       result.query = result.conditions.join(' AND ');
@@ -401,7 +410,9 @@ export class ProductDao {
           c.nombre_color,
           c.codigo_color,
           pv.cantidad,
-          pv.es_activo
+          pv.es_activo,
+          p.precio_compra,
+          p.precio_venta
       from productos p
       inner join productos_variantes pv on p.id_producto=pv.id_producto
       left join colores c on c.id_color=pv.id_color
