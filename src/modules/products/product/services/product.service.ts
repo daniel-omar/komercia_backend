@@ -568,9 +568,9 @@ export class ProductService {
     const height = this.mmToPt(23);
     const margin = this.mmToPt(2);
     const usableWidth = width - margin * 2;   // ~124 pt
-    const usableHeight = height - margin * 2; // 
-    const lineHeight = this.mmToPt(2);
-    const fontSize = 9;
+    const usableHeight = height - margin * 1.5; // 
+    const lineHeight = this.mmToPt(1.8);
+    const fontSize = 8.5;
 
     for (let index = 0; index < productsVariants.length; index++) {
       const productVariant = productsVariants[index];
@@ -578,7 +578,7 @@ export class ProductService {
 
       for (let subindex = 0; subindex < cantidad; subindex++) {
         const page = pdfDoc.addPage([width, height]);
-        let textYPosition = usableHeight - this.mmToPt(1); // Posición para el texto del nombre
+        let textYPosition = usableHeight; // Posición para el texto del nombre
 
         // Texto
         const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
@@ -602,7 +602,7 @@ export class ProductService {
           font,
           color: rgb(0, 0, 0),
         });
-        textYPosition -= lineHeight;
+        textYPosition -= lineHeight - this.mmToPt(1);
 
         // Generar código (QR o barras)
         let imageBytes: Buffer;
@@ -613,25 +613,28 @@ export class ProductService {
           imageBytes = await bwipjs.toBuffer({
             bcid: 'code128',
             text: productVariant.codigo_producto_variante,
-            // scale: 5,   // altura por módulo
-            // scaleX: 3, // ancho por módulo
-            // scaleY: 2, // ancho por módulo
-            height: 13,   // altura sin texto
-            // width: 1,
+            scaleX: 4,              // Aumenta ancho de las barras
+            scaleY: 4,              // Aumenta altura general
+            height: 18,  // altura sin texto
+            // width: 20,
             includetext: true,
             textsize: 15,
-            textfont: 'Courier-Bold',
-            textyoffset: 2,
+            textfont: 'Helvetica-Bold',
+            textxalign: 'center',
+            textyoffset: 0,
           });
         }
 
         const barcodeImage = await pdfDoc.embedPng(imageBytes);
-        const scaleRatio = Math.min(
-          usableWidth / barcodeImage.width,
-          usableHeight / barcodeImage.height
-        );
-        const scaledWidth = barcodeImage.width * scaleRatio;
-        const scaledHeight = barcodeImage.height * scaleRatio;
+        const scaleDown = 0.15; // Escalar para que no se vea gigante
+        const { width: scaledWidth, height: scaledHeight } = barcodeImage.scale(scaleDown);
+
+        // const scaleRatio = Math.min(
+        //   usableWidth / barcodeImage.width,
+        //   usableHeight / barcodeImage.height
+        // );
+        // const scaledWidth = barcodeImage.width * scaleRatio;
+        // const scaledHeight = barcodeImage.height * scaleRatio;
 
         const x = (width - scaledWidth) / 2; // Centrado horizontal
         const y = textYPosition - scaledHeight;
