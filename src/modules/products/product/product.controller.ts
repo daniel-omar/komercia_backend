@@ -100,6 +100,7 @@ export class ProductController {
     let worksheet = excelWorkbook.getWorksheet(1);
 
     const responseValidation = await this.productService.validSaveBulk(worksheet);
+    console.log(responseValidation);
     if (responseValidation.length <= 0) throw Error("No has ingresado registros.");
     const responseSave = await this.productService.saveBulk(responseValidation, user.id_usuario);
 
@@ -176,7 +177,7 @@ export class ProductController {
       console.error("❌ Archivo no encontrado:", filePath);
       return res.status(404).json({ message: 'Archivo no encontrado' });
     }
-    
+
     res.set({
       'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'Content-Disposition': `attachment; filename="${fileName}"`,
