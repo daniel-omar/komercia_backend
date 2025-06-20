@@ -7,13 +7,13 @@ export class CargaDAO {
 
     constructor(private connection: DataSource) { }
 
-    public async saveCarga(id_formato: number, id_usuario: number) {
+    public async saveCarga(id_formato: number, id_usuario: number, fecha_hora_registro: any) {
         try {
             const carga = await this.connection.query(
                 `select func_guardar_carga id_carga
-                from STAGE.func_guardar_carga($1,$2)
+                from STAGE.func_guardar_carga($1,$2,$3)
             `,
-                [id_formato, id_usuario],
+                [id_formato, id_usuario, fecha_hora_registro],
             );
 
             return { id_carga: carga[0]?.id_carga };

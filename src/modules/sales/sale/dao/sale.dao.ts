@@ -107,9 +107,9 @@ export class SaleDao {
   async save(body, connection?: Connection | QueryRunner) {
     if (!connection) connection = this.connection;
     try {
-      const response = await connection.query(`insert into ventas(id_tipo_pago,id_usuario_registro,concepto)
-      values($1,$2,$3)
-      returning id_venta;`, [body.id_tipo_pago, body.id_usuario_registro, body.concepto]);
+      const response = await connection.query(`insert into ventas(id_tipo_pago,id_usuario_registro,concepto,fecha_hora_registro)
+      values($1,$2,$3,$4)
+      returning id_venta;`, [body.id_tipo_pago, body.id_usuario_registro, body.concepto, body.fecha_hora_registro]);
 
       return {
         message: 'save success',
@@ -129,11 +129,11 @@ export class SaleDao {
     if (!connection) connection = this.connection;
     try {
 
-      const { id_venta, id_usuario_registro, total, total_sugerido, tiene_descuento, id_tipo_descuento, descuento, valor_descuento } = body;
+      const { id_venta, id_usuario_registro, total, total_sugerido, tiene_descuento, id_tipo_descuento, descuento, valor_descuento, fecha_hora_actualizacion } = body;
       const response = await connection.query(`update ventas
        set 
            id_usuario_actualizacion=$2,
-           fecha_hora_actualizacion=CURRENT_TIMESTAMP,
+           fecha_hora_actualizacion=$9,
            total=$3,
            total_sugerido=$4,
            tiene_descuento=$5,
@@ -142,7 +142,7 @@ export class SaleDao {
            valor_descuento=$8
        where
        id_venta=$1
-      returning id_venta;`, [id_venta, id_usuario_registro, total, total_sugerido, tiene_descuento, id_tipo_descuento, descuento, valor_descuento]);
+      returning id_venta;`, [id_venta, id_usuario_registro, total, total_sugerido, tiene_descuento, id_tipo_descuento, descuento, valor_descuento, fecha_hora_actualizacion]);
 
       return {
         message: 'save success',
@@ -161,8 +161,7 @@ export class SaleDao {
   async saveDetail(body, connection?: Connection | QueryRunner) {
     if (!connection) connection = this.connection;
     try {
-      const response = await connection.query(`select * from func_guardar_venta_detalle($1,$2,$3)`, [body.id_venta, body.id_usuario_registro, body.productos]);
-
+      const response = await connection.query(`select * from func_guardar_venta_detalle($1,$2,$3,$4)`, [body.id_venta, body.id_usuario_registro, body.productos, body.fecha_hora_registro]);
       return {
         message: 'saveDetail success',
         data: response[0],
@@ -212,15 +211,15 @@ export class SaleDao {
     if (!connection) connection = this.connection;
     try {
 
-      const { id_venta, id_usuario_registro, es_activo } = body;
+      const { id_venta, id_usuario_registro, es_activo, fecha_hora_actualizacion } = body;
       const response = await connection.query(`update ventas
        set 
            id_usuario_actualizacion=$2,
-           fecha_hora_actualizacion=CURRENT_TIMESTAMP,
+           fecha_hora_actualizacion=$4,
            es_activo=$3
        where
        id_venta=$1
-      returning id_venta;`, [id_venta, id_usuario_registro, es_activo]);
+      returning id_venta;`, [id_venta, id_usuario_registro, es_activo, fecha_hora_actualizacion]);
 
       return {
         message: 'save success',

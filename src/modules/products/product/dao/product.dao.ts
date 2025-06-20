@@ -64,8 +64,8 @@ export class ProductDao {
         result.params.push(filters.ids_producto);
       }
     }
-    result.conditions.push(`p.es_activo = $${(result.params.length + 1)}`);
-    result.params.push(true);
+    // result.conditions.push(`p.es_activo = $${(result.params.length + 1)}`);
+    // result.params.push(true);
 
     if (result.conditions.length > 0) {
       result.query = result.conditions.join(' AND ');
@@ -87,7 +87,8 @@ export class ProductDao {
           p.precio_venta,
           p.id_categoria_producto,
           cp.nombre_categoria,
-          sum(pv.cantidad) cantidad_total
+          sum(pv.cantidad) cantidad_total,
+          p.es_activo
       from productos p
       inner join categorias_producto cp on cp.id_categoria_producto=p.id_Categoria_producto
       left join productos_variantes pv on pv.id_producto=p.id_producto and pv.cantidad>0 and pv.es_activo=true
@@ -176,11 +177,11 @@ export class ProductDao {
     if (!connection) connection = this.connection;
     try {
 
-      const { id_producto, id_usuario_registro, codigo_producto, nombre_producto, descripcion_producto, precio_compra, precio_venta, id_categoria_producto } = body;
+      const { id_producto, id_usuario_registro, codigo_producto, nombre_producto, descripcion_producto, precio_compra, precio_venta, id_categoria_producto, fecha_hora_actualizacion } = body;
       const response = await connection.query(`update productos
        set 
           id_usuario_actualizacion=$2,
-          fecha_hora_actualizacion=CURRENT_TIMESTAMP,
+          fecha_hora_actualizacion=$9,
           codigo_producto=coalesce($3,codigo_producto), 
           nombre_producto=$4, 
           descripcion_producto=coalesce($5,descripcion_producto), 
@@ -189,7 +190,7 @@ export class ProductDao {
           id_categoria_producto=$8
        where
        id_producto=$1
-      returning id_producto;`, [id_producto, id_usuario_registro, codigo_producto, nombre_producto, descripcion_producto, precio_compra, precio_venta, id_categoria_producto]);
+      returning id_producto;`, [id_producto, id_usuario_registro, codigo_producto, nombre_producto, descripcion_producto, precio_compra, precio_venta, id_categoria_producto, fecha_hora_actualizacion]);
 
       return {
         message: 'update success',
@@ -205,15 +206,43 @@ export class ProductDao {
     }
   }
 
+  async updateActive(body, connection?: Connection | QueryRunner) {
+    if (!connection) connection = this.connection;
+    try {
+
+      const { id_producto, id_usuario_registro, es_activo, fecha_hora_actualizacion } = body;
+      const response = await connection.query(`update productos
+       set 
+           id_usuario_actualizacion=$2,
+           fecha_hora_actualizacion=$4,
+           es_activo=$3
+       where
+       id_producto=$1
+       returning id_producto;`, [id_producto, id_usuario_registro, es_activo, fecha_hora_actualizacion]);
+
+      return {
+        message: 'save success',
+        data: response[0],
+        errors: null,
+      };
+
+    } catch (error) {
+      console.log('save.dao error: ', error.message);
+      return {
+        errors: error.message,
+      };
+    }
+  }
+
   async save(body, connection?: Connection | QueryRunner) {
     if (!connection) connection = this.connection;
     try {
 
-      const { id_usuario_registro, nombre_producto, descripcion_producto, precio_compra, precio_venta, id_categoria_producto } = body;
+      const { id_usuario_registro, nombre_producto, descripcion_producto, precio_compra, precio_venta, id_categoria_producto, fecha_hora_registro } = body;
       const response = await connection.query(`
-      insert into productos(nombre_producto, descripcion_producto, precio_compra, precio_venta, id_categoria_producto,id_usuario_registro)
-      values($1,$2,$3,$4,$5,$6)
-      returning id_producto;`, [nombre_producto, descripcion_producto, precio_compra, precio_venta, id_categoria_producto, id_usuario_registro]);
+      insert into productos(nombre_producto, descripcion_producto, precio_compra, precio_venta, id_categoria_producto,id_usuario_registro, fecha_hora_registro)
+      values($1,$2,$3,$4,$5,$6,$7)
+      returning id_producto;`, [nombre_producto, descripcion_producto, precio_compra, precio_venta, id_categoria_producto, id_usuario_registro, fecha_hora_registro]);
 
       return {
         message: 'save success',
@@ -253,11 +282,11 @@ export class ProductDao {
     }
   }
 
-  async saveVariants(saveVariantsJson, idUsuarioRegistro, connection?: Connection | QueryRunner) {
+  async saveVariants(saveVariantsJson, idUsuarioRegistro, fechaHoraRegistro, connection?: Connection | QueryRunner) {
     if (!connection) connection = this.connection;
     try {
 
-      const response = await connection.query(`select func_guardar_productos_variantes from func_guardar_productos_variantes($1,$2)`, [saveVariantsJson, idUsuarioRegistro]);
+      const response = await connection.query(`select func_guardar_productos_variantes from func_guardar_productos_variantes($1,$2,$3)`, [saveVariantsJson, idUsuarioRegistro, fechaHoraRegistro]);
 
       return {
         message: 'save variant success',
@@ -273,14 +302,15 @@ export class ProductDao {
     }
   }
 
-  async saveBulk({ productos, id_carga }, connection?: Connection | QueryRunner) {
+  async saveBulk({ productos, id_carga, fecha_hora_registro }, connection?: Connection | QueryRunner) {
     if (!connection) connection = this.connection;
     try {
 
-      const queryString = `select total_filas,total_filas_incorrectas,observaciones from func_guardar_productos($1,$2)`;
+      const queryString = `select total_filas,total_filas_incorrectas,observaciones from func_guardar_productos($1,$2,$3)`;
       const saveProductos = await connection.query(queryString, [
         id_carga,
-        productos
+        productos,
+        fecha_hora_registro
       ]);
 
       return {
@@ -301,11 +331,11 @@ export class ProductDao {
     if (!connection) connection = this.connection;
     try {
 
-      const { id_tipo_ingreso, observacion, id_usuario_registro } = body;
+      const { id_tipo_ingreso, observacion, id_usuario_registro, fecha_hora_registro } = body;
       const response = await connection.query(`
-      insert into ingresos(id_tipo_ingreso,observacion,id_usuario_registro)
-      values($1,$2,$3)
-      returning id_ingreso;`, [id_tipo_ingreso, observacion, id_usuario_registro]);
+      insert into ingresos(id_tipo_ingreso,observacion,id_usuario_registro,fecha_hora_registro)
+      values($1,$2,$3,$4)
+      returning id_ingreso;`, [id_tipo_ingreso, observacion, id_usuario_registro, fecha_hora_registro]);
 
       return {
         message: 'saveIncome success',
@@ -389,6 +419,8 @@ export class ProductDao {
     if (filters.tiene_cantidad != undefined) {
       result.conditions.push(`pv.cantidad>0`);
     }
+    result.conditions.push(`p.es_activo = $${(result.params.length + 1)}`);
+    result.params.push(filters.es_activo);
 
     if (result.conditions.length > 0) {
       result.query = result.conditions.join(' AND ');

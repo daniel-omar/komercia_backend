@@ -14,7 +14,7 @@ import { ProductVariantDto, SaveInventoryDto } from '../dto/save-inventory.dto';
 import { SaveVariantsDto } from '../dto/save-variants.dto';
 import { TagProductVariantDto } from '../dto/tag-products.dto';
 import { FilterProductVariantDto } from '../dto/filter-product_variant.dto';
-
+import { DateTime } from 'luxon';
 @Injectable()
 export class ProductService {
 
@@ -62,7 +62,8 @@ export class ProductService {
           id_categoria_producto: x.id_categoria_producto,
           nombre_categoria: x.nombre_categoria
         },
-        cantidad_disponible: x.cantidad_total
+        cantidad_disponible: x.cantidad_total,
+        es_activo: x.es_activo
       }
     })
 
@@ -139,15 +140,51 @@ export class ProductService {
     console.log(body);
 
     try {
+      const fechaHoraRegistro = DateTime.now().setZone('America/Lima').toFormat('yyyy-LL-dd HH:mm:ss');
 
       const updateResponse = await this.productDao.update({
         id_producto, id_usuario_registro, codigo_producto: codigo_producto.trim(), nombre_producto: nombre_producto.trim(),
-        descripcion_producto: descripcion_producto.trim(), precio_compra, precio_venta, id_categoria_producto
+        descripcion_producto: descripcion_producto.trim(), precio_compra, precio_venta, id_categoria_producto,
+        fecha_hora_actualizacion: fechaHoraRegistro
       }, queryRunner);
       console.log(updateResponse);
 
       if (updateResponse.errors) throw Error(updateResponse.errors);
       console.log(updateResponse);
+
+      await queryRunner.commitTransaction();
+
+    } catch (error) {
+      console.log(error);
+      await queryRunner.rollbackTransaction();
+      throw Error(error.message);
+    } finally {
+      await queryRunner.release();
+    }
+
+  }
+
+  async updateActive(body: any): Promise<void> {
+
+    const { id_usuario_registro, es_activo, id_producto } = body;
+
+    const queryRunner = this.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    console.log(body)
+    try {
+      const fechaHoraRegistro = DateTime.now().setZone('America/Lima').toFormat('yyyy-LL-dd HH:mm:ss');
+
+      const updateActiveResponse = await this.productDao.updateActive({
+        id_usuario_registro,
+        id_producto: id_producto,
+        es_activo: es_activo,
+        fecha_hora_actualizacion: fechaHoraRegistro
+      }, queryRunner);
+
+      if (updateActiveResponse.errors) throw Error(updateActiveResponse.errors);
+      console.log(updateActiveResponse);
 
       await queryRunner.commitTransaction();
 
@@ -171,10 +208,12 @@ export class ProductService {
     console.log(body);
 
     try {
+      const fechaHoraRegistro = DateTime.now().setZone('America/Lima').toFormat('yyyy-LL-dd HH:mm:ss');
 
       const saveResponse = await this.productDao.save({
         id_usuario_registro, nombre_producto: nombre_producto.trim(),
-        descripcion_producto: descripcion_producto ? descripcion_producto.trim() : null, precio_compra, precio_venta, id_categoria_producto
+        descripcion_producto: descripcion_producto ? descripcion_producto.trim() : null, precio_compra, precio_venta, id_categoria_producto,
+        fecha_hora_registro: fechaHoraRegistro
       }, queryRunner);
       console.log(saveResponse);
 
@@ -200,12 +239,14 @@ export class ProductService {
     await queryRunner.startTransaction();
 
     try {
+      const fechaHoraRegistro = DateTime.now().setZone('America/Lima').toFormat('yyyy-LL-dd HH:mm:ss');
       console.log(saveVariantes)
       const { variantes, id_usuario_registro } = saveVariantes;
 
       const saveVariantsResponse = await this.productDao.saveVariants(
         JSON.stringify(variantes),
         id_usuario_registro,
+        fechaHoraRegistro,
         queryRunner
       );
       if (saveVariantsResponse.errors) {
@@ -269,14 +310,15 @@ export class ProductService {
 
     try {
       console.log(productos)
+      const fechaHoraRegistro = DateTime.now().setZone('America/Lima').toFormat('yyyy-LL-dd HH:mm:ss');
       const formatoCarga = await this.formatoCargaDAO.getFormatoCargaByNombre("Carga Productos");
-      const carga = await this.cargaDAO.saveCarga(formatoCarga.id_formato_carga, id_usuario_registro);
+      const carga = await this.cargaDAO.saveCarga(formatoCarga.id_formato_carga, id_usuario_registro, fechaHoraRegistro);
       if (!carga.id_carga) {
         throw Error("Problema al registrar carga");
       }
       //return carga;
       const productosJSON = JSON.stringify(productos);
-      const productosCarga = await this.productDao.saveBulk({ productos: productosJSON, id_carga: carga.id_carga }, queryRunner);
+      const productosCarga = await this.productDao.saveBulk({ productos: productosJSON, id_carga: carga.id_carga, fecha_hora_registro: fechaHoraRegistro }, queryRunner);
       if (productosCarga.errors) {
         await this.cargaDAO.updateCarga(carga.id_carga, 0, 0, productosCarga.errors);
         throw Error("Problema al registrar productos");
@@ -386,16 +428,16 @@ export class ProductService {
 
     try {
       console.log({ id_tipo_ingreso, id_usuario_registro })
-
+      const fechaHoraRegistro = DateTime.now().setZone('America/Lima').toFormat('yyyy-LL-dd HH:mm:ss');
       const formatoCarga = await this.formatoCargaDAO.getFormatoCargaByNombre("Carga Inventario");
-      const carga = await this.cargaDAO.saveCarga(formatoCarga.id_formato_carga, id_usuario_registro);
+      const carga = await this.cargaDAO.saveCarga(formatoCarga.id_formato_carga, id_usuario_registro, fechaHoraRegistro);
       if (!carga.id_carga) {
         throw Error("Problema al registrar carga");
       }
 
       //save
       const saveIncomeResponse = await this.productDao.saveIncome({
-        id_tipo_ingreso, observacion: null, id_usuario_registro
+        id_tipo_ingreso, observacion: null, id_usuario_registro, fecha_hora_registro: fechaHoraRegistro
       }, queryRunner);
       console.log(saveIncomeResponse);
 
@@ -449,10 +491,10 @@ export class ProductService {
 
     try {
       console.log("productsVariants: ", productsVariants);
-
+      const fechaHoraRegistro = DateTime.now().setZone('America/Lima').toFormat('yyyy-LL-dd HH:mm:ss');
       //save
       const saveIncomeResponse = await this.productDao.saveIncome({
-        id_tipo_ingreso, observacion: null, id_usuario_registro
+        id_tipo_ingreso, observacion: null, id_usuario_registro, fecha_hora_registro: fechaHoraRegistro
       }, queryRunner);
       console.log(saveIncomeResponse);
       if (saveIncomeResponse.errors) {
@@ -643,9 +685,9 @@ export class ProductService {
         const y = textYPosition - scaledHeight;
 
         page.drawImage(barcodeImage, {
-          x,
+          x: x + 5,
           y,
-          width: scaledWidth,
+          width: scaledWidth - 10,
           height: scaledHeight,
         });
       }

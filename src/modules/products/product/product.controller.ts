@@ -66,6 +66,17 @@ export class ProductController {
     return true;
   }
 
+  @Put("/update_active")
+  async updateActive(@Request() req: Request, @Body() body): Promise<any> {
+    const user: User = req["user"];
+    body = {
+      ...body,
+      id_usuario_registro: user.id_usuario
+    }
+    await this.productService.updateActive(body);
+    return true;
+  }
+
   @Post("/save")
   async save(@Request() req: Request, @Body() body: SaveProductDto): Promise<any> {
     const user: User = req["user"];

@@ -5,6 +5,7 @@ import { SaleDao } from '../dao/sale.dao';
 import { Connection, QueryRunner } from 'typeorm';
 import { create, all } from 'mathjs';
 import { Objects } from '@common/constants/objects';
+import { DateTime } from 'luxon';
 
 @Injectable()
 export class SaleService {
@@ -90,6 +91,9 @@ export class SaleService {
 
     console.log(body)
     try {
+      const fechaHoraRegistro = DateTime.now().setZone('America/Lima').toFormat('yyyy-LL-dd HH:mm:ss');
+
+      body.fecha_hora_registro = fechaHoraRegistro;
       const saveResponse = await this.saleDao.save(body, queryRunner);
       if (saveResponse.errors) throw Error(saveResponse.errors);
       console.log(saveResponse);
@@ -98,7 +102,8 @@ export class SaleService {
       const saveDetailResponse = await this.saleDao.saveDetail({
         id_usuario_registro,
         id_venta: idVenta,
-        productos: JSON.stringify(productos)
+        productos: JSON.stringify(productos),
+        fecha_hora_registro: fechaHoraRegistro
       }, queryRunner);
       if (saveDetailResponse.errors) throw Error(saveDetailResponse.errors);
       console.log(saveDetailResponse);
@@ -153,7 +158,8 @@ export class SaleService {
         tiene_descuento: tieneDescuento,
         id_tipo_descuento: idTipoDescuento,
         descuento,
-        valor_descuento: monto_descuento
+        valor_descuento: monto_descuento,
+        fecha_hora_actualizacion: fechaHoraRegistro
       }, queryRunner);
       if (updateTotalResponse.errors) throw Error(updateTotalResponse.errors);
       console.log(updateTotalResponse);
@@ -209,11 +215,13 @@ export class SaleService {
 
     console.log(body)
     try {
+      const fechaHoraRegistro = DateTime.now().setZone('America/Lima').toFormat('yyyy-LL-dd HH:mm:ss');
 
       const updateActiveResponse = await this.saleDao.updateActive({
         id_usuario_registro,
         id_venta: id_venta,
-        es_activo: es_activo
+        es_activo: es_activo,
+        fecha_hora_actualizacion: fechaHoraRegistro
       }, queryRunner);
 
       if (updateActiveResponse.errors) throw Error(updateActiveResponse.errors);
