@@ -14,6 +14,8 @@ import { SaveVariantDto } from './dto/save-variant.dto';
 import { SaveVariantsDto } from './dto/save-variants.dto';
 import { FilterProductVariantDto } from './dto/filter-product_variant.dto';
 import { SaveInventoryDto } from './dto/save-inventory.dto';
+import { join } from 'path';
+import { createReadStream, existsSync } from 'fs';
 
 @Controller('products/product')
 export class ProductController {
@@ -162,5 +164,25 @@ export class ProductController {
     if (!response) throw new NotFoundException("No encontrado");
 
     return response;
+  }
+
+  @Get('/download_template_products')
+  async downloadTemplate(@Res() res: Response) {
+    console.log("res")
+    const filePath = './src/templates/plantilla_carga_producto.xlsx';
+    const fileName = 'plantilla_productos.xlsx';
+
+    if (!existsSync(filePath)) {
+      console.error("❌ Archivo no encontrado:", filePath);
+      return res.status(404).json({ message: 'Archivo no encontrado' });
+    }
+    
+    res.set({
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': `attachment; filename="${fileName}"`,
+    });
+
+    const fileStream = createReadStream(filePath);
+    fileStream.pipe(res);
   }
 }
