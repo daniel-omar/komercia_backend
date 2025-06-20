@@ -101,6 +101,7 @@ export class ProductDao {
           p.precio_venta,
           p.id_categoria_producto,
           cp.nombre_categoria
+      order by p.fecha_hora_actualizacion,p.fecha_hora_registro desc
       ;`, params);
     return products;
 
@@ -276,7 +277,7 @@ export class ProductDao {
     if (!connection) connection = this.connection;
     try {
 
-      const queryString = `select total_filas,total_filas_incorrectas from func_guardar_productos($1,$2)`;
+      const queryString = `select total_filas,total_filas_incorrectas,observaciones from func_guardar_productos($1,$2)`;
       const saveProductos = await connection.query(queryString, [
         id_carga,
         productos

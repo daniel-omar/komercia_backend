@@ -281,9 +281,12 @@ export class ProductService {
         await this.cargaDAO.updateCarga(carga.id_carga, 0, 0, productosCarga.errors);
         throw Error("Problema al registrar productos");
       }
-      console.log(productosCarga)
 
       const data = productosCarga.data;
+      if (data.total_filas_incorrectas > 0) {
+        throw Error(data.observaciones);
+      }
+
       let observacion = data.total_filas_incorrectas > 0 ? 'Se presentaron observaciones en los registros.' : '';
       const updateCarga = await this.cargaDAO.updateCarga(carga.id_carga, data.total_filas, data.total_filas_incorrectas, observacion);
       if (!updateCarga) {
