@@ -453,4 +453,52 @@ export class ProductDao {
        ${query} limit 1;`, params);
     return productVariant[0];
   }
+
+  async saveOutput(body, connection?: Connection | QueryRunner) {
+    if (!connection) connection = this.connection;
+    try {
+
+      const { observacion, id_usuario_registro, fecha_hora_registro } = body;
+      const response = await connection.query(`
+      insert into salidas(observacion,id_usuario_registro,fecha_hora_registro)
+      values($1,$2,$3)
+      returning id_salida;`, [observacion, id_usuario_registro, fecha_hora_registro]);
+
+      return {
+        message: 'saveOutput success',
+        data: response[0],
+        errors: null,
+      };
+
+    } catch (error) {
+      console.log('saveOutput.dao error: ', error.message);
+      return {
+        errors: error.message,
+      };
+    }
+  }
+
+  async saveOutputDetails({ salida_detalles, id_salida }, connection?: Connection | QueryRunner) {
+    if (!connection) connection = this.connection;
+    try {
+      console.log({ id_salida, salida_detalles })
+      const queryString = `select total_filas,total_filas_incorrectas from func_guardar_salida_detalles($1,$2)`;
+      const saveProductos = await connection.query(queryString, [
+        id_salida,
+        salida_detalles
+      ]);
+
+      return {
+        message: 'saveOutputDetails success',
+        data: saveProductos[0],
+        errors: null,
+      };
+
+    } catch (error) {
+      console.log('saveOutputDetails.dao error: ', error.message);
+      return {
+        errors: error.message,
+      };
+    }
+  }
 }

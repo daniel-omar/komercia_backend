@@ -197,4 +197,13 @@ export class ProductController {
     const fileStream = createReadStream(filePath);
     fileStream.pipe(res);
   }
+
+  @Post("/save_output")
+  async saveOutput(@Request() req: Request, @Body() saveInventory: SaveInventoryDto): Promise<any> {
+    const user: User = req["user"];
+
+    await this.productService.saveOutput(saveInventory.productos_variantes, user.id_usuario);
+    return true;
+  }
+
 }
