@@ -10,7 +10,7 @@ export class ProductCategoryDao {
   ) { }
 
   async getAll(): Promise<any> {
-    const productCategories = await this.connection.query(`select * from categorias_producto where es_activo=true`, []);
+    const productCategories = await this.connection.query(`select * from categorias_producto where es_activo=true order by nombre_categoria`, []);
     return productCategories;
   }
 
