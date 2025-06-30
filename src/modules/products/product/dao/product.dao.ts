@@ -1,6 +1,7 @@
 import { QueryParamsDto } from '@common/interfaces/query-params.dto';
 import { Injectable } from '@nestjs/common';
 import { Connection, QueryRunner } from 'typeorm';
+import { FilterProductsDto } from '../dto/filter-products.dto';
 
 @Injectable()
 export class ProductDao {
@@ -44,7 +45,7 @@ export class ProductDao {
     return products[0];
   }
 
-  getFiltersProducts(filters): QueryParamsDto {
+  getFiltersProducts(filters: any): QueryParamsDto {
     let result: QueryParamsDto;
     result = { query: '', params: [], conditions: [] };
 
@@ -63,6 +64,10 @@ export class ProductDao {
         result.conditions.push(`p.id_producto = any($${(result.params.length + 1)}::int[])`);
         result.params.push(filters.ids_producto);
       }
+    }
+    if (filters.es_activo) {
+      result.conditions.push(`p.es_activo = $${(result.params.length + 1)}`);
+      result.params.push(filters.es_activo);
     }
     // result.conditions.push(`p.es_activo = $${(result.params.length + 1)}`);
     // result.params.push(true);

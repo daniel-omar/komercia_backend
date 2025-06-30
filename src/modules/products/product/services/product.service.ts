@@ -15,6 +15,7 @@ import { SaveVariantsDto } from '../dto/save-variants.dto';
 import { TagProductVariantDto } from '../dto/tag-products.dto';
 import { FilterProductVariantDto } from '../dto/filter-product_variant.dto';
 import { DateTime } from 'luxon';
+import { FilterProductsDto } from '../dto/filter-products.dto';
 @Injectable()
 export class ProductService {
 
@@ -46,8 +47,9 @@ export class ProductService {
     return product;
   }
 
-  async getByFilter(filter: any): Promise<any> {
+  async getByFilter(filter: FilterProductsDto): Promise<any> {
     const queryParams = this.productDao.getFiltersProducts(filter);
+    console.log(queryParams);
     let products = await this.productDao.getByFilter(queryParams);
     products = products.map(x => {
       return {
