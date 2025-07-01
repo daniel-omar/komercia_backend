@@ -1,6 +1,7 @@
 import { QueryParamsDto } from '@common/interfaces/query-params.dto';
 import { Injectable } from '@nestjs/common';
 import { Connection, QueryRunner } from 'typeorm';
+import { FilterProductsDto } from '../dto/filter-products.dto';
 
 @Injectable()
 export class ProductDao {
@@ -44,7 +45,7 @@ export class ProductDao {
     return products[0];
   }
 
-  getFiltersProducts(filters): QueryParamsDto {
+  getFiltersProducts(filters: any): QueryParamsDto {
     let result: QueryParamsDto;
     result = { query: '', params: [], conditions: [] };
 
@@ -63,6 +64,10 @@ export class ProductDao {
         result.conditions.push(`p.id_producto = any($${(result.params.length + 1)}::int[])`);
         result.params.push(filters.ids_producto);
       }
+    }
+    if (filters.es_activo) {
+      result.conditions.push(`p.es_activo = $${(result.params.length + 1)}`);
+      result.params.push(filters.es_activo);
     }
     // result.conditions.push(`p.es_activo = $${(result.params.length + 1)}`);
     // result.params.push(true);
@@ -452,5 +457,53 @@ export class ProductDao {
       left join tallas t on t.id_talla=pv.id_talla
        ${query} limit 1;`, params);
     return productVariant[0];
+  }
+
+  async saveOutput(body, connection?: Connection | QueryRunner) {
+    if (!connection) connection = this.connection;
+    try {
+
+      const { observacion, id_usuario_registro, fecha_hora_registro } = body;
+      const response = await connection.query(`
+      insert into salidas(observacion,id_usuario_registro,fecha_hora_registro)
+      values($1,$2,$3)
+      returning id_salida;`, [observacion, id_usuario_registro, fecha_hora_registro]);
+
+      return {
+        message: 'saveOutput success',
+        data: response[0],
+        errors: null,
+      };
+
+    } catch (error) {
+      console.log('saveOutput.dao error: ', error.message);
+      return {
+        errors: error.message,
+      };
+    }
+  }
+
+  async saveOutputDetails({ salida_detalles, id_salida }, connection?: Connection | QueryRunner) {
+    if (!connection) connection = this.connection;
+    try {
+      console.log({ id_salida, salida_detalles })
+      const queryString = `select total_filas,total_filas_incorrectas from func_guardar_salida_detalles($1,$2)`;
+      const saveProductos = await connection.query(queryString, [
+        id_salida,
+        salida_detalles
+      ]);
+
+      return {
+        message: 'saveOutputDetails success',
+        data: saveProductos[0],
+        errors: null,
+      };
+
+    } catch (error) {
+      console.log('saveOutputDetails.dao error: ', error.message);
+      return {
+        errors: error.message,
+      };
+    }
   }
 }

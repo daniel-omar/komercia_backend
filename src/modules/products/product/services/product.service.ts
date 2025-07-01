@@ -15,6 +15,7 @@ import { SaveVariantsDto } from '../dto/save-variants.dto';
 import { TagProductVariantDto } from '../dto/tag-products.dto';
 import { FilterProductVariantDto } from '../dto/filter-product_variant.dto';
 import { DateTime } from 'luxon';
+import { FilterProductsDto } from '../dto/filter-products.dto';
 @Injectable()
 export class ProductService {
 
@@ -46,8 +47,9 @@ export class ProductService {
     return product;
   }
 
-  async getByFilter(filter: any): Promise<any> {
+  async getByFilter(filter: FilterProductsDto): Promise<any> {
     const queryParams = this.productDao.getFiltersProducts(filter);
+    console.log(queryParams);
     let products = await this.productDao.getByFilter(queryParams);
     products = products.map(x => {
       return {
@@ -728,5 +730,41 @@ export class ProductService {
     };
 
     return resultado;
+  }
+
+  async saveOutput(productsVariants: ProductVariantDto[], id_usuario_registro: number): Promise<any> {
+
+    const queryRunner = this.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      console.log("productsVariants: ", productsVariants);
+      const fechaHoraRegistro = DateTime.now().setZone('America/Lima').toFormat('yyyy-LL-dd HH:mm:ss');
+      //save
+      const saveOutputResponse = await this.productDao.saveOutput({
+        observacion: '', id_usuario_registro, fecha_hora_registro: fechaHoraRegistro
+      }, queryRunner);
+      console.log(saveOutputResponse);
+      if (saveOutputResponse.errors) {
+        throw Error(saveOutputResponse.errors);
+      }
+      const idSalida = saveOutputResponse.data.id_salida;
+
+      const incomesJSON = JSON.stringify(productsVariants);
+      const saveOutputBulkResponse = await this.productDao.saveOutputDetails({ id_salida: idSalida, salida_detalles: incomesJSON }, queryRunner);
+      if (saveOutputBulkResponse.errors) {
+        throw Error("Problema al registrar salida");
+      }
+      console.log(saveOutputBulkResponse)
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      console.log(error);
+      await queryRunner.rollbackTransaction();
+      throw Error(error.message);
+    } finally {
+      await queryRunner.release();
+    }
+
   }
 } 

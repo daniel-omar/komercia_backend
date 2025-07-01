@@ -1,5 +1,5 @@
 import { Transform, Type } from "class-transformer";
-import { IsArray, IsEmail, IsInt, IsNumber, IsOptional, IsString, MinLength } from "class-validator";
+import { IsArray, IsBoolean, IsEmail, IsInt, IsNumber, IsOptional, IsString, MinLength } from "class-validator";
 
 export class FilterProductsDto {
 
@@ -20,4 +20,8 @@ export class FilterProductsDto {
     @IsArray()
     @IsInt({ each: true })
     ids_categoria: number[];
+
+    @IsOptional()
+    // @IsBoolean()
+    es_activo: boolean;
 }   

@@ -16,6 +16,7 @@ import { FilterProductVariantDto } from './dto/filter-product_variant.dto';
 import { SaveInventoryDto } from './dto/save-inventory.dto';
 import { join } from 'path';
 import { createReadStream, existsSync } from 'fs';
+import { Objects } from '@common/constants/objects';
 
 @Controller('products/product')
 export class ProductController {
@@ -143,7 +144,7 @@ export class ProductController {
   async saveIncome(@Request() req: Request, @Body() saveInventory: SaveInventoryDto): Promise<any> {
     const user: User = req["user"];
 
-    await this.productService.saveIncome(saveInventory.productos_variantes, 1, user.id_usuario);
+    await this.productService.saveIncome(saveInventory.productos_variantes, Objects.TiposIngreso.COMPRA.id, user.id_usuario);
     return true;
   }
 
@@ -163,7 +164,9 @@ export class ProductController {
     const user: User = req["user"];
 
     const { productos_variantes } = productsVariants;
+
     const bytes = await this.productService.generateTagsV2(productos_variantes, "");
+    await this.productService.saveIncome(productos_variantes, Objects.TiposIngreso.COMPRA.id, user.id_usuario);
 
     res.setHeader('Content-Type', 'application/pdf');
     res.send(bytes);
@@ -197,4 +200,13 @@ export class ProductController {
     const fileStream = createReadStream(filePath);
     fileStream.pipe(res);
   }
+
+  @Post("/save_output")
+  async saveOutput(@Request() req: Request, @Body() saveInventory: SaveInventoryDto): Promise<any> {
+    const user: User = req["user"];
+
+    await this.productService.saveOutput(saveInventory.productos_variantes, user.id_usuario);
+    return true;
+  }
+
 }
