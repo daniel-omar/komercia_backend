@@ -99,4 +99,15 @@ export class Objects {
     }
   ]
 
+  static TiposIngreso = {
+    COMPRA: {
+      id: 1, name: 'Compra'
+    },
+    DEVOLUCION: {
+      id: 2, name: 'Devolución'
+    },
+    AJUSTE: {
+      id: 3, name: 'Ajuste'
+    }
+  }
 }
