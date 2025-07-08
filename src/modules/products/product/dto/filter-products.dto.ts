@@ -24,4 +24,10 @@ export class FilterProductsDto {
     @IsOptional()
     // @IsBoolean()
     es_activo: boolean;
+
+    @IsOptional()
+    nombre_producto: String;
+
+    @IsOptional()
+    codigo_producto: String;
 }   

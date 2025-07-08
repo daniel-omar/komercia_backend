@@ -2,6 +2,7 @@ import { QueryParamsDto } from '@common/interfaces/query-params.dto';
 import { Injectable } from '@nestjs/common';
 import { Connection, QueryRunner } from 'typeorm';
 import { FilterProductsDto } from '../dto/filter-products.dto';
+import { PaginationDto } from '../dto/pagination.dto';
 
 @Injectable()
 export class ProductDao {
@@ -68,6 +69,10 @@ export class ProductDao {
     if (filters.es_activo) {
       result.conditions.push(`p.es_activo = $${(result.params.length + 1)}`);
       result.params.push(filters.es_activo);
+    }
+    if (filters.nombre_producto) {
+      result.conditions.push(`p.nombre_producto like ('%'||$${(result.params.length + 1)}||'%')`);
+      result.params.push(filters.nombre_producto);
     }
     // result.conditions.push(`p.es_activo = $${(result.params.length + 1)}`);
     // result.params.push(true);
@@ -506,4 +511,48 @@ export class ProductDao {
       };
     }
   }
+
+  async getByFilterWithPagination({ query, params }: QueryParamsDto, { start, per_page }: PaginationDto) {
+
+    const products = await this.connection.query(`
+      select 
+          p.id_producto,
+          p.codigo_producto,
+          p.nombre_producto,
+          p.descripcion_producto,
+          p.precio_compra,
+          p.precio_venta,
+          p.id_categoria_producto,
+          cp.nombre_categoria,
+          sum(pv.cantidad) cantidad_total,
+          p.es_activo,
+          p.fecha_hora_registro,
+          p.fecha_hora_actualizacion
+      from productos p
+      inner join categorias_producto cp on cp.id_categoria_producto=p.id_Categoria_producto
+      left join productos_variantes pv on pv.id_producto=p.id_producto and pv.cantidad>0 and pv.es_activo=true
+      ${query}
+      group by 
+          p.id_producto,
+          p.codigo_producto,
+          p.nombre_producto,
+          p.descripcion_producto,
+          p.precio_compra,
+          p.precio_venta,
+          p.id_categoria_producto,
+          cp.nombre_categoria
+      order by p.fecha_hora_actualizacion,p.fecha_hora_registro desc
+      OFFSET ${start} LIMIT ${per_page}
+      ;`, params);
+    return products;
+
+  }
+
+  async getCarga(idCarga: number): Promise<any> {
+
+    const carga = await this.connection.query(`select * from stage.carga where id_carga=$1`, [idCarga]);
+    return carga[0];
+
+  }
+
 }

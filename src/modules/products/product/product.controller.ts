@@ -17,6 +17,7 @@ import { SaveInventoryDto } from './dto/save-inventory.dto';
 import { join } from 'path';
 import { createReadStream, existsSync } from 'fs';
 import { Objects } from '@common/constants/objects';
+import { FilterProductsWithPaginationDto } from './dto/filter-products-with-pagination.dto';
 
 @Controller('products/product')
 export class ProductController {
@@ -209,4 +210,19 @@ export class ProductController {
     return true;
   }
 
+
+  @Post("/get_by_filter_with_pagination")
+  async getByFilterWithPagination(@Body() filterWithPagination: FilterProductsWithPaginationDto): Promise<ResponseDto> {
+    let response = await this.productService.getByFilterWithPagination(filterWithPagination);
+    return response;
+  }
+
+  @Get("/get_carga")
+  async getCarga(@Query() query: { id_carga: number }): Promise<any> {
+    // throw new NotFoundException("gaa")
+    let response = await this.productService.getCarga(query.id_carga);
+    if (!response) throw new NotFoundException("No encontrado");
+
+    return { carga: response, cargas: [response] };
+  }
 }

@@ -16,6 +16,8 @@ import { TagProductVariantDto } from '../dto/tag-products.dto';
 import { FilterProductVariantDto } from '../dto/filter-product_variant.dto';
 import { DateTime } from 'luxon';
 import { FilterProductsDto } from '../dto/filter-products.dto';
+import { FilterProductsWithPaginationDto } from '../dto/filter-products-with-pagination.dto';
+import { PaginationService } from '@common/services/pagination.service';
 @Injectable()
 export class ProductService {
 
@@ -23,7 +25,8 @@ export class ProductService {
     private productDao: ProductDao,
     private cargaDAO: CargaDAO,
     private formatoCargaDAO: FormatoCargaDAO,
-    private connection: Connection
+    private connection: Connection,
+    private paginationService: PaginationService
   ) { }
 
   async getAll(): Promise<any> {
@@ -764,6 +767,59 @@ export class ProductService {
       throw Error(error.message);
     } finally {
       await queryRunner.release();
+    }
+
+  }
+
+  async getByFilterWithPagination({ pagination, filter }: FilterProductsWithPaginationDto): Promise<any> {
+    pagination.per_page = pagination.per_page > 0 ? pagination.per_page : 10;
+    pagination.new_page = pagination.new_page > 0 ? pagination.new_page : 1;
+    pagination.start = (pagination.new_page - 1) * pagination.per_page;
+
+    const queryParams = this.productDao.getFiltersProducts(filter);
+    let products = await this.productDao.getByFilterWithPagination(queryParams, pagination);
+    products = products.map(x => {
+      return {
+        id_producto: x.id_producto,
+        codigo_producto: x.codigo_producto,
+        nombre_producto: x.nombre_producto,
+        descripcion_producto: x.descripcion_producto,
+        precio_compra: x.precio_compra,
+        precio_venta: x.precio_venta,
+        id_categoria_producto: x.id_categoria_producto,
+        categoria: {
+          id_categoria_producto: x.id_categoria_producto,
+          nombre_categoria: x.nombre_categoria
+        },
+        cantidad_disponible: x.cantidad_total,
+        es_activo: x.es_activo,
+        fecha_hora_registro: x.fecha_hora_registro,
+        fecha_hora_actualizacion: x.fecha_hora_actualizacion
+      }
+    })
+
+    const paginationResponse = await this.paginationService.getPaginationWithFilters({
+      query: `select 
+          count(p.id_producto) total
+      from productos p
+      ${queryParams.query}`, params: queryParams.params
+    }, pagination);
+
+    return {
+      productos: products,
+      paginacion: paginationResponse
+    };
+  }
+
+  async getCarga(idCarga: number): Promise<any> {
+
+    try {
+      const carga = await this.productDao.getCarga(idCarga);
+      return carga;
+
+    } catch (error) {
+      console.log(error.message)
+      throw new InternalServerErrorException(error.message);
     }
 
   }
