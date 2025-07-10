@@ -3,6 +3,7 @@ import { BadRequestException, Injectable, InternalServerErrorException, Unauthor
 import * as bcryptjs from 'bcryptjs';
 import { PeriodDao } from '../dao/period.dao';
 import { Objects } from '@common/constants/objects';
+import { DateTime } from 'luxon';
 
 @Injectable()
 export class PeriodService {
@@ -28,8 +29,10 @@ export class PeriodService {
   async getToFilters(): Promise<any> {
 
     try {
+      const fecha = DateTime.now().setZone('America/Lima').toFormat('yyyy-LL-dd');
+
       //1-get
-      let days = await this.periodDao.getDaysToFilter();
+      let days = await this.periodDao.getDaysToFilter(fecha);
       days = days.map(x => {
         return {
           anio: x.anio,
@@ -42,7 +45,7 @@ export class PeriodService {
         }
       });
 
-      let weeks = await this.periodDao.getWeeksToFilter();
+      let weeks = await this.periodDao.getWeeksToFilter(fecha);
       weeks = weeks.map(x => {
         return {
           anio: x.anio,
@@ -55,7 +58,7 @@ export class PeriodService {
       });
       weeks.reverse();
 
-      let months = await this.periodDao.getMonthsToFilter();
+      let months = await this.periodDao.getMonthsToFilter(fecha);
       months = months.map(x => {
         const dates = this.getFirstAndLastDateOfMonth(x.anio, x.mes)
         return {
@@ -68,7 +71,7 @@ export class PeriodService {
       });
       months.reverse();
 
-      let years = await this.periodDao.getYearsToFilter();
+      let years = await this.periodDao.getYearsToFilter(fecha);
       years = years.map(x => {
         return {
           anio: x.anio,
@@ -96,7 +99,7 @@ export class PeriodService {
   formatDate(dateStr) {
     const date = new Date(dateStr);
     console.log(date)
-    const day = date.getDate()+1; // Día del mes
+    const day = date.getDate() + 1; // Día del mes
     const month = Objects.Meses[date.getMonth()].shortName; // Nombre del mes
     return `${day} ${month}`; // Retorna el formato "día de mes"
   };
