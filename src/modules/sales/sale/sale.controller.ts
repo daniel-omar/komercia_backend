@@ -4,6 +4,7 @@ import { SaleService } from './services/sale.service';
 import { ResponseDto } from 'src/common/interfaces/response.dto';
 import { FilterSaleDto, FiltersSalesDto } from './dto';
 import { User } from '@modules/auth/entities/user.entity';
+import { FilterSalesWithPaginationDto } from './dto/filter-sales-with-pagination.dto';
 
 @Controller('sales/sale')
 export class SaleController {
@@ -17,9 +18,14 @@ export class SaleController {
   }
 
   @Get("/find")
-  async find(@Query() query: FilterSaleDto): Promise<any> {
+  async find(@Request() req: Request, @Query() query: FilterSaleDto): Promise<any> {
     // throw new NotFoundException("gaa")
-    let response = await this.saleService.find(query);
+    const user: User = req["user"];
+    const body = {
+      ...query,
+      usuario: user
+    }
+    let response = await this.saleService.find(body);
     if (!response) throw new NotFoundException("No encontrado");
 
     return response;
@@ -64,6 +70,17 @@ export class SaleController {
     }
     await this.saleService.updateActive(body);
     return true;
+  }
+
+  @Post("/get_by_filter_with_pagination")
+  async getByFilterWithPagination(@Request() req: Request, @Body() { filter, pagination }: FilterSalesWithPaginationDto): Promise<any> {
+    const user: User = req["user"];
+    filter = {
+      ...filter,
+      usuario: user
+    }
+    let response = await this.saleService.getByFilterWithPagination({ filter, pagination });
+    return response;
   }
 
 }

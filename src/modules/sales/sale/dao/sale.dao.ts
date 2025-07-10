@@ -2,6 +2,7 @@ import { Objects } from '@common/constants/objects';
 import { QueryParamsDto } from '@common/interfaces/query-params.dto';
 import { Injectable } from '@nestjs/common';
 import { Connection, QueryRunner } from 'typeorm';
+import { PaginationDto } from '../dto/pagination.dto';
 
 @Injectable()
 export class SaleDao {
@@ -61,7 +62,36 @@ export class SaleDao {
 
   async find({ query, params }: QueryParamsDto) {
 
-    const sales = await this.connection.query(`select * from ventas v ${query} limit 1;`, params);
+    const sales = await this.connection.query(`select 
+      v.id_venta,
+          v.concepto,
+          v.id_tipo_pago,
+          tp.nombre_tipo_pago tipo_pago,
+          v.tiene_descuento,
+          v.id_tipo_descuento,
+          td.nombre_tipo_descuento tipo_descuento,
+          v.descuento,
+          v.total_sugerido,
+          v.total,
+          v.total_final,
+          v.id_usuario_registro,
+          ur.nombre usuario_registro_nombre,
+          ur.apellido_paterno usuario_registro_apellido_paterno,
+          ur.apellido_materno usuario_registro_apellido_materno,
+          v.id_usuario_actualizacion,
+          ua.nombre usuario_actualizacion_nombre,
+          ua.apellido_paterno usuario_actualizacion_apellido_paterno,
+          ua.apellido_materno usuario_actualizacion_apellido_materno,
+          to_char(v.fecha_hora_registro,'YYYY-MM-DD') fecha_registro,
+          to_char(v.fecha_hora_registro,'HH12:MI AM') hora_registro,
+          to_char(v.fecha_hora_actualizacion,'YYYY-MM-DD') fecha_actualizacion,
+          to_char(v.fecha_hora_actualizacion,'HH12:MI AM') hora_actualizacion
+      from ventas v
+      inner join tipos_pago tp on tp.id_tipo_pago=v.id_tipo_pago
+      left join tipos_descuento td on td.id_tipo_descuento=v.id_tipo_descuento
+      inner join usuarios ur on ur.id_usuario=v.id_usuario_registro
+      inner join usuarios ua on ua.id_usuario=v.id_usuario_actualizacion
+      ${query} limit 1;`, params);
     return sales[0];
 
   }
@@ -233,5 +263,44 @@ export class SaleDao {
         errors: error.message,
       };
     }
+  }
+
+  async getByFilterWithPagination({ query, params }: QueryParamsDto, { start, per_page }: PaginationDto) {
+
+    const sales = await this.connection.query(`
+      select 
+          v.id_venta,
+          v.concepto,
+          v.id_tipo_pago,
+          tp.nombre_tipo_pago tipo_pago,
+          v.tiene_descuento,
+          v.id_tipo_descuento,
+          td.nombre_tipo_descuento tipo_descuento,
+          v.descuento,
+          v.total_sugerido,
+          v.total,
+          v.total_final,
+          v.id_usuario_registro,
+          ur.nombre usuario_registro_nombre,
+          ur.apellido_paterno usuario_registro_apellido_paterno,
+          ur.apellido_materno usuario_registro_apellido_materno,
+          v.id_usuario_actualizacion,
+          ua.nombre usuario_actualizacion_nombre,
+          ua.apellido_paterno usuario_actualizacion_apellido_paterno,
+          ua.apellido_materno usuario_actualizacion_apellido_materno,
+          to_char(v.fecha_hora_registro,'YYYY-MM-DD') fecha_registro,
+          to_char(v.fecha_hora_registro,'HH12:MI AM') hora_registro,
+          to_char(v.fecha_hora_actualizacion,'YYYY-MM-DD') fecha_actualizacion,
+          to_char(v.fecha_hora_actualizacion,'HH12:MI AM') hora_actualizacion
+      from ventas v
+      inner join tipos_pago tp on tp.id_tipo_pago=v.id_tipo_pago
+      left join tipos_descuento td on td.id_tipo_descuento=v.id_tipo_descuento
+      inner join usuarios ur on ur.id_usuario=v.id_usuario_registro
+      inner join usuarios ua on ua.id_usuario=v.id_usuario_actualizacion
+      ${query}
+      order by v.fecha_hora_registro desc
+      OFFSET ${start} LIMIT ${per_page};`, params);
+    return sales;
+
   }
 }

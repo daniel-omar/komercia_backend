@@ -1,3 +1,4 @@
+import { User } from "@modules/auth/entities/user.entity";
 import { Transform, Type } from "class-transformer";
 import { IsArray, IsEmail, IsInt, IsNumber, IsOptional, IsString, MinLength } from "class-validator";
 
@@ -41,4 +42,6 @@ export class FiltersSalesDto {
     @IsNumber()
     id_venta: number;
 
+    @IsOptional()
+    usuario?: User;
 }

@@ -6,13 +6,16 @@ import { Connection, QueryRunner } from 'typeorm';
 import { create, all } from 'mathjs';
 import { Objects } from '@common/constants/objects';
 import { DateTime } from 'luxon';
+import { FilterSalesWithPaginationDto } from '../dto/filter-sales-with-pagination.dto';
+import { PaginationService } from '@common/services/pagination.service';
 
 @Injectable()
 export class SaleService {
   private math;
   constructor(
     private saleDao: SaleDao,
-    private connection: Connection
+    private connection: Connection,
+    private paginationService: PaginationService
   ) {
     this.math = create(all, {
       number: 'BigNumber',
@@ -36,7 +39,38 @@ export class SaleService {
   async find(filter: any): Promise<any> {
     const queryParams = this.saleDao.getFiltersSale(filter);
     console.log(queryParams)
-    const sale = await this.saleDao.find(queryParams);
+    let sale = await this.saleDao.find(queryParams);
+    sale = {
+      id_venta: sale.id_venta,
+      concepto: sale.concepto,
+      id_tipo_pago: sale.id_tipo_pago,
+      tipo_pago: { nombre_tipo_pago: sale.tipo_pago, id_tipo_pago: sale.id_tipo_pago },
+      tiene_descuento: sale.tiene_descuento,
+      id_tipo_descuento: sale.id_tipo_descuento,
+      tipo_descuento: sale.tiene_descuento ? { nombre_tipo_descuento: sale.tipo_descuento, id_tipo_descuento: sale.id_tipo_descuento } : null,
+      descuento: sale.descuento,
+      total_sugerido: sale.total_sugerido,
+      total: sale.total,
+      total_final: sale.total_final,
+      id_usuario_registro: sale.id_usuario_registro,
+      usuario_registro: {
+        id_usuario: sale.id_usuario_registro,
+        nombre: sale.usuario_registro_nombre,
+        apellido_paterno: sale.usuario_registro_apellido_paterno,
+        apellido_materno: sale.usuario_registro_apellido_materno
+      },
+      id_usuario_actualizacion: sale.id_usuario_actualizacion,
+      usuario_actualizacion: sale.id_usuario_actualizacion ? {
+        id_usuario: sale.id_usuario_actualizacion,
+        nombre: sale.usuario_actualizacion_nombre,
+        apellido_paterno: sale.usuario_actualizacion_apellido_paterno,
+        apellido_materno: sale.usuario_actualizacion_apellido_materno
+      } : null,
+      fecha_registro: sale.fecha_registro,
+      hora_registro: sale.hora_registro,
+      fecha_actualizacion: sale.fecha_actualizacion,
+      hora_actualizacion: sale.hora_actualizacion
+    }
     return sale;
   }
 
@@ -237,5 +271,61 @@ export class SaleService {
       await queryRunner.release();
     }
 
+  }
+
+  async getByFilterWithPagination({ pagination, filter }: FilterSalesWithPaginationDto): Promise<any> {
+    pagination.per_page = pagination.per_page > 0 ? pagination.per_page : 10;
+    pagination.new_page = pagination.new_page > 0 ? pagination.new_page : 1;
+    pagination.start = (pagination.new_page - 1) * pagination.per_page;
+
+    const queryParams = this.saleDao.getFiltersSale(filter);
+    console.log(queryParams)
+
+    let sales = await this.saleDao.getByFilterWithPagination(queryParams, pagination);
+    sales = sales.map(x => {
+      return {
+        id_venta: x.id_venta,
+        concepto: x.concepto,
+        id_tipo_pago: x.id_tipo_pago,
+        tipo_pago: { nombre_tipo_pago: x.tipo_pago, id_tipo_pago: x.id_tipo_pago },
+        tiene_descuento: x.tiene_descuento,
+        id_tipo_descuento: x.id_tipo_descuento,
+        tipo_descuento: x.tiene_descuento ? { nombre_tipo_descuento: x.tipo_descuento, id_tipo_descuento: x.id_tipo_descuento } : null,
+        descuento: x.descuento,
+        total_sugerido: x.total_sugerido,
+        total: x.total,
+        total_final: x.total_final,
+        id_usuario_registro: x.id_usuario_registro,
+        usuario_registro: {
+          id_usuario: x.id_usuario_registro,
+          nombre: x.usuario_registro_nombre,
+          apellido_paterno: x.usuario_registro_apellido_paterno,
+          apellido_materno: x.usuario_registro_apellido_materno
+        },
+        id_usuario_actualizacion: x.id_usuario_actualizacion,
+        usuario_actualizacion: x.id_usuario_actualizacion ? {
+          id_usuario: x.id_usuario_actualizacion,
+          nombre: x.usuario_actualizacion_nombre,
+          apellido_paterno: x.usuario_actualizacion_apellido_paterno,
+          apellido_materno: x.usuario_actualizacion_apellido_materno
+        } : null,
+        fecha_registro: x.fecha_registro,
+        hora_registro: x.hora_registro,
+        fecha_actualizacion: x.fecha_actualizacion,
+        hora_actualizacion: x.hora_actualizacion
+      }
+    })
+
+    const paginationResponse = await this.paginationService.getPaginationWithFilters({
+      query: `select 
+          count(v.id_venta) total
+      from ventas v
+      ${queryParams.query}`, params: queryParams.params
+    }, pagination);
+
+    return {
+      ventas: sales,
+      paginacion: paginationResponse
+    };
   }
 }
