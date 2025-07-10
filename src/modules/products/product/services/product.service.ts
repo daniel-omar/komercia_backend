@@ -663,10 +663,10 @@ export class ProductService {
           imageBytes = await bwipjs.toBuffer({
             bcid: 'code128',
             text: productVariant.codigo_producto_variante,
-            scaleX: 4,              // Aumenta ancho de las barras
+            //scaleX: 4,              // Aumenta ancho de las barras
             scaleY: 4,              // Aumenta altura general
-            height: 20,  // altura sin texto
-            //width: 149,
+            height: 23,  // altura sin texto
+            width: 150,
             includetext: true,
             textsize: 15,
             textfont: 'Helvetica-Bold',
