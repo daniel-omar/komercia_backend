@@ -617,7 +617,7 @@ export class ProductService {
     const width = this.mmToPt(48);
     const height = this.mmToPt(23);
     const margin = this.mmToPt(2);
-    const usableWidth = width - margin * 2;   // ~124 pt
+    const usableWidth = width - margin * 1;   // ~124 pt
     const usableHeight = height - margin * 1.5; // 
     const lineHeight = this.mmToPt(1.8);
     const fontSize = 8.5;
@@ -665,8 +665,8 @@ export class ProductService {
             text: productVariant.codigo_producto_variante,
             scaleX: 4,              // Aumenta ancho de las barras
             scaleY: 4,              // Aumenta altura general
-            height: 18,  // altura sin texto
-            // width: 20,
+            height: 20,  // altura sin texto
+            //width: 149,
             includetext: true,
             textsize: 15,
             textfont: 'Helvetica-Bold',
@@ -690,9 +690,9 @@ export class ProductService {
         const y = textYPosition - scaledHeight;
 
         page.drawImage(barcodeImage, {
-          x: x + 5,
+          x: x ,
           y,
-          width: scaledWidth - 10,
+          width: scaledWidth ,
           height: scaledHeight,
         });
       }
