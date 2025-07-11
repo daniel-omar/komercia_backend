@@ -54,7 +54,11 @@ export class UserService {
       perfil: {
         id_perfil: user.id_perfil,
         nombre_perfil: user.nombre_perfil
-      }
+      },
+      tipo_documento: {
+        id_tipo_documento: user.id_tipo_documento,
+        nombre_tipo_documento: user.nombre_tipo_documento,
+      },
     }
 
     return user;

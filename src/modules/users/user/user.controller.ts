@@ -22,6 +22,15 @@ export class UserController {
     };
   }
 
+  @Get("/get_by_id/:id")
+  async getById(@Param('id') idUsuario): Promise<any> {
+    // throw new NotFoundException("gaa")
+    let response = await this.userService.findById(idUsuario);
+    const { clave: _, ...rest } = response;
+    return rest;
+  }
+
+
   @Get("/get_by_profile/:id_perfil")
   async getByIdProfile(@Param('id_perfil') idPerfil): Promise<any> {
     // throw new NotFoundException("gaa")
@@ -33,7 +42,7 @@ export class UserController {
   async getByFilterWithPagination(@Body() filterWithPagination: FilterUsersWithPaginationDto): Promise<ResponseDto> {
     let response = await this.userService.getByFilterWithPagination(filterWithPagination);
     return response;
-    
+
   }
 
 }

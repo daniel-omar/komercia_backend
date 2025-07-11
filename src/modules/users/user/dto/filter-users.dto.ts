@@ -23,10 +23,7 @@ export class FilterUsersDto {
     nombre: String;
 
     @IsOptional()
-    apellido_paterno: String;
-
-    @IsOptional()
-    apellido_materno: String;
+    correo: String;
 
     @IsOptional()
     es_activo: boolean;

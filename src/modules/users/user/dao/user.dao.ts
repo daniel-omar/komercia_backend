@@ -34,8 +34,14 @@ export class UserDao {
 
   async findById(id_usuario: number) {
 
-    const user = await this.connection.query(`select u.*,p.nombre_perfil from usuarios u
+    const user = await this.connection.query(`
+      select 
+        u.*,
+        p.nombre_perfil,
+        td.nombre_tipo_documento 
+      from usuarios u
       inner join perfiles p on p.id_perfil=u.id_perfil
+      inner join tipos_documento td on u.id_tipo_documento=td.id_tipo_documento
       where id_usuario=$1 limit 1;`, [id_usuario]);
 
     return user[0];
@@ -69,7 +75,7 @@ export class UserDao {
       }
     }
     if (filters.nombre) {
-      result.conditions.push(`u.nombre like ('%'||$${(result.params.length + 1)}||'%')`);
+      result.conditions.push(`(u.nombre ||' '|| u.apellido_paterno ||' '|| u.apellido_materno) like ('%'||$${(result.params.length + 1)}||'%')`);
       result.params.push(filters.nombre);
     }
     if (filters.numero_documento) {
