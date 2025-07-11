@@ -148,8 +148,12 @@ export class ProductService {
       const fechaHoraRegistro = DateTime.now().setZone('America/Lima').toFormat('yyyy-LL-dd HH:mm:ss');
 
       const updateResponse = await this.productDao.update({
-        id_producto, id_usuario_registro, codigo_producto: codigo_producto.trim(), nombre_producto: nombre_producto.trim(),
-        descripcion_producto: descripcion_producto.trim(), precio_compra, precio_venta, id_categoria_producto,
+        id_producto,
+        id_usuario_registro,
+        nombre_producto: nombre_producto.trim(),
+        descripcion_producto: descripcion_producto ? descripcion_producto.trim() : null,
+        precio_compra, precio_venta,
+        id_categoria_producto,
         fecha_hora_actualizacion: fechaHoraRegistro
       }, queryRunner);
       console.log(updateResponse);
@@ -690,9 +694,9 @@ export class ProductService {
         const y = textYPosition - scaledHeight;
 
         page.drawImage(barcodeImage, {
-          x: x ,
+          x: x,
           y,
-          width: scaledWidth ,
+          width: scaledWidth,
           height: scaledHeight,
         });
       }

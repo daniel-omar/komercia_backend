@@ -191,16 +191,15 @@ export class ProductDao {
       const response = await connection.query(`update productos
        set 
           id_usuario_actualizacion=$2,
-          fecha_hora_actualizacion=$9,
-          codigo_producto=coalesce($3,codigo_producto), 
-          nombre_producto=$4, 
-          descripcion_producto=coalesce($5,descripcion_producto), 
-          precio_compra=$6, 
-          precio_venta=$7,
-          id_categoria_producto=$8
+          fecha_hora_actualizacion=$8,
+          nombre_producto=$3, 
+          descripcion_producto=coalesce($4,descripcion_producto), 
+          precio_compra=$5, 
+          precio_venta=$6,
+          id_categoria_producto=$7
        where
        id_producto=$1
-      returning id_producto;`, [id_producto, id_usuario_registro, codigo_producto, nombre_producto, descripcion_producto, precio_compra, precio_venta, id_categoria_producto, fecha_hora_actualizacion]);
+      returning id_producto;`, [id_producto, id_usuario_registro, nombre_producto, descripcion_producto, precio_compra, precio_venta, id_categoria_producto, fecha_hora_actualizacion]);
 
       return {
         message: 'update success',
