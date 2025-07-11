@@ -19,6 +19,8 @@ import { ProductsModule } from '@modules/products/products.module';
 import { GeneralModule } from '@modules/general/general.module';
 import { PaymentTypeModule } from '@modules/general/payment_type/payment_type.module';
 import { SaleModule } from '@modules/sales/sale/sale.module';
+import { AuthService } from '@modules/auth/services/auth.service';
+import { AuthDao } from '@modules/auth/dao/auth.dao';
 
 @Module({
   imports: [
@@ -56,8 +58,10 @@ import { SaleModule } from '@modules/sales/sale/sale.module';
     AppService,
 
     AuthJwtService,
-    UserService,
-    UserDao,
+    AuthService,
+    AuthDao,
+    //UserService,
+    //UserDao,
 
     {
       provide: APP_FILTER,

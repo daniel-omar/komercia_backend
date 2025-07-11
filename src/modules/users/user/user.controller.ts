@@ -5,6 +5,7 @@ import { CreateUserDto } from './dto/index';
 import { AuthGuard } from '@common/guards/auth.guard';
 import { ResponseDto } from 'src/common/interfaces/response.dto';
 import { Authorization } from '@core/decorators/authorization.decorator';
+import { FilterUsersWithPaginationDto } from './dto/filter-users-with-pagination.dto';
 
 @Controller('users/user')
 export class UserController {
@@ -27,4 +28,12 @@ export class UserController {
     let response = await this.userService.getByIdProfile(idPerfil);
     return response;
   }
+
+  @Post("/get_by_filter_with_pagination")
+  async getByFilterWithPagination(@Body() filterWithPagination: FilterUsersWithPaginationDto): Promise<ResponseDto> {
+    let response = await this.userService.getByFilterWithPagination(filterWithPagination);
+    return response;
+    
+  }
+
 }

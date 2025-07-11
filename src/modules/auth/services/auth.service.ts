@@ -10,6 +10,7 @@ import { LoginResponse } from '../interfaces/login-response.interface';
 import { AuthDao } from '../dao/auth.dao';
 import { AuthJwtService } from './auth_jwt.service';
 import { TokenResponse } from '../interfaces/token-response.interface';
+import { User } from '../entities/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -79,4 +80,18 @@ export class AuthService {
       token: newAccessToken
     };
   }
+
+  async findById(idUsuario: number): Promise<User> {
+    let user = await this.authDao.findById(idUsuario);
+    user = {
+      ...user,
+      perfil: {
+        id_perfil: user.id_perfil,
+        nombre_perfil: user.nombre_perfil
+      }
+    }
+
+    return user;
+  }
+
 }

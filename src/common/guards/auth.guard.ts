@@ -3,13 +3,13 @@ import { JwtService } from '@nestjs/jwt';
 import { Observable } from 'rxjs';
 import * as request from 'supertest';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
-import { UserService } from '@users/user/services/user.service';
 import { Reflector } from '@nestjs/core';
+import { AuthService } from '@modules/auth/services/auth.service';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
 
-  constructor(private jwtService: JwtService, private userService: UserService, private readonly reflector: Reflector) { }
+  constructor(private jwtService: JwtService, private authService: AuthService, private readonly reflector: Reflector) { }
 
   async canActivate(
     context: ExecutionContext
@@ -28,7 +28,7 @@ export class AuthGuard implements CanActivate {
     if (!token) {
       throw new UnauthorizedException();
     }
-    
+
     try {
       const payload = await this.jwtService.verifyAsync<JwtPayload>(
         token,
@@ -37,7 +37,7 @@ export class AuthGuard implements CanActivate {
         }
       );
       //console.log(payload)
-      const user = await this.userService.findById(payload.id_usuario);
+      const user = await this.authService.findById(payload.id_usuario);
       if (!user) throw new UnauthorizedException("User does not exists");
       if (!user.es_activo) throw new UnauthorizedException("User is not active");
 
