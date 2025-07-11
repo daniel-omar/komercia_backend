@@ -8,19 +8,22 @@ import { UserDao } from '../dao/user.dao';
 import { User } from '@modules/auth/entities/user.entity';
 import { PaginationService } from '@common/services/pagination.service';
 import { FilterUsersWithPaginationDto } from '../dto/filter-users-with-pagination.dto';
+import { Connection } from 'typeorm';
+import { DateTime } from 'luxon';
 
 @Injectable()
 export class UserService {
 
   constructor(
     private paginationService: PaginationService,
-    private userDao: UserDao
+    private userDao: UserDao,
+    private connection: Connection
   ) { }
 
   async create(createUserDto: CreateUserDto): Promise<any> {
 
     try {
-
+      // createUserDto.clave = createUserDto.numero_documento;
       const { clave, ...userData } = createUserDto;
 
       //1-Encriptar password
@@ -29,6 +32,8 @@ export class UserService {
         ...userData
       };
 
+      const fechaHoraRegistro = DateTime.now().setZone('America/Lima').toFormat('yyyy-LL-dd HH:mm:ss');
+      newUser.fecha_hora_registro = fechaHoraRegistro;
       //2-Guardar
       newUser = await this.userDao.create(newUser);
 
@@ -121,4 +126,79 @@ export class UserService {
     };
   }
 
+  async updateActive(body: any): Promise<void> {
+
+    const { id_usuario, es_activo, id_usuario_registro } = body;
+
+    const queryRunner = this.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    console.log(body)
+    try {
+      const fechaHoraRegistro = DateTime.now().setZone('America/Lima').toFormat('yyyy-LL-dd HH:mm:ss');
+
+      const updateActiveResponse = await this.userDao.updateActive({
+        id_usuario: id_usuario,
+        es_activo: es_activo,
+        id_usuario_registro,
+        fecha_hora_actualizacion: fechaHoraRegistro
+      }, queryRunner);
+
+      if (updateActiveResponse.errors) throw Error(updateActiveResponse.errors);
+      console.log(updateActiveResponse);
+
+      await queryRunner.commitTransaction();
+
+    } catch (error) {
+      console.log(error);
+      await queryRunner.rollbackTransaction();
+      throw Error(error.message);
+    } finally {
+      await queryRunner.release();
+    }
+
+  }
+
+  async update(body: any): Promise<void> {
+
+    const { id_usuario, nombre, apellido_paterno, apellido_materno, id_tipo_documento, numero_documento, id_perfil, correo, numero_telefono, id_usuario_registro } = body;
+
+    const queryRunner = this.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    console.log(body);
+
+    try {
+      const fechaHoraRegistro = DateTime.now().setZone('America/Lima').toFormat('yyyy-LL-dd HH:mm:ss');
+
+      const updateResponse = await this.userDao.update({
+        id_usuario,
+        nombre: nombre.trim(),
+        apellido_paterno: apellido_paterno.trim(),
+        apellido_materno: apellido_materno.trim(),
+        id_tipo_documento,
+        numero_documento: numero_documento.trim(),
+        id_perfil,
+        correo,
+        numero_telefono: numero_telefono ? numero_telefono.trim() : numero_telefono,
+        id_usuario_registro,
+        fecha_hora_actualizacion: fechaHoraRegistro
+      }, queryRunner);
+      console.log(updateResponse);
+
+      if (updateResponse.errors) throw Error(updateResponse.errors);
+      console.log(updateResponse);
+
+      await queryRunner.commitTransaction();
+
+    } catch (error) {
+      console.log(error);
+      await queryRunner.rollbackTransaction();
+      throw Error(error.message);
+    } finally {
+      await queryRunner.release();
+    }
+
+  }
 }

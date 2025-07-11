@@ -1,9 +1,8 @@
 import { IsEmail, IsNumber, IsOptional, IsString, MinLength } from "class-validator";
 
-export class CreateUserDto {
-
-    @IsEmail()
-    correo: string;
+export class UpdateUserDto {
+    @IsNumber()
+    id_usuario: number;
 
     @IsString()
     nombre: string;
@@ -26,13 +25,10 @@ export class CreateUserDto {
     @IsNumber()
     id_perfil: number;
 
-    @MinLength(6)
-    clave: string;
+    @IsEmail()
+    correo: string;
 
     @IsOptional()
     @IsNumber()
     id_usuario_registro?: number;
-
-    @IsOptional()
-    fecha_hora_registro?: any;
 }

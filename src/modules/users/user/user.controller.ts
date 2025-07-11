@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, Put } from '@nestjs/common';
 import { UserService } from './services/user.service';
 
 import { CreateUserDto } from './dto/index';
@@ -6,20 +6,22 @@ import { AuthGuard } from '@common/guards/auth.guard';
 import { ResponseDto } from 'src/common/interfaces/response.dto';
 import { Authorization } from '@core/decorators/authorization.decorator';
 import { FilterUsersWithPaginationDto } from './dto/filter-users-with-pagination.dto';
+import { User } from '@modules/auth/entities/user.entity';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Controller('users/user')
 export class UserController {
   constructor(private readonly userService: UserService) { }
 
   @Post("/create")
-  async create(@Request() req: Request, @Body() requestTokenDto: CreateUserDto): Promise<ResponseDto> {
-
+  async create(@Request() req: Request, @Body() requestTokenDto: CreateUserDto): Promise<any> {
+    const user: User = req["user"];
+    requestTokenDto = {
+      ...requestTokenDto,
+      id_usuario_registro: user.id_usuario
+    }
     let response = await this.userService.create(requestTokenDto);
-    return {
-      status: Number(process.env.STATUS_SERVICES_OK),
-      data: response,
-      message: "success"
-    };
+    response;
   }
 
   @Get("/get_by_id/:id")
@@ -43,6 +45,28 @@ export class UserController {
     let response = await this.userService.getByFilterWithPagination(filterWithPagination);
     return response;
 
+  }
+
+  @Put("/update")
+  async update(@Request() req: Request, @Body() body: UpdateUserDto): Promise<any> {
+    const user: User = req["user"];
+    body = {
+      ...body,
+      id_usuario_registro: user.id_usuario
+    }
+    await this.userService.update(body);
+    return true;
+  }
+
+  @Put("/update_active")
+  async updateActive(@Request() req: Request, @Body() body): Promise<any> {
+    const user: User = req["user"];
+    body = {
+      ...body,
+      id_usuario_registro: user.id_usuario
+    }
+    await this.userService.updateActive(body);
+    return true;
   }
 
 }
