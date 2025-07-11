@@ -15,11 +15,13 @@ export class AllExceptionsFilter extends BaseExceptionFilter {
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
+      console.log("exceptionResponse: ",exceptionResponse)
       message =
         typeof exceptionResponse === 'string'
           ? exceptionResponse
           : (exceptionResponse as any).message || message;
     } else if (exception instanceof Error) {
+      console.log("exceptionResponse: ",exception)
       message = exception.message;
     }
 

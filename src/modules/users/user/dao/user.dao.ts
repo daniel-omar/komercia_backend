@@ -182,7 +182,20 @@ export class UserDao {
       };
 
     } catch (error) {
-      console.log('update.dao error: ', error.message);
+      console.log('update.dao error: ', error);
+      if (error.code == 23505) {
+        const detail: string = error.detail;
+        const match = detail.match(/\(([^)]+)\)=\(([^)]+)\)/);
+        const field = match?.[1];  // e.g. 'documento'
+        const value = match?.[2];  // e.g. '12345678'
+        const message = field
+          ? `El campo '${field}' con valor '${value}' ya está registrado.`
+          : 'Ya existe un valor duplicado que viola una restricción única.';
+
+        return {
+          errors: message,
+        };
+      }
       return {
         errors: error.message,
       };

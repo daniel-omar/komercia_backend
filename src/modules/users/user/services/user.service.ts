@@ -43,7 +43,18 @@ export class UserService {
       return user;
 
     } catch (error) {
-      console.log(error.message)
+      console.log("error create: ", error);
+      if (error.code == 23505) {
+        const detail: string = error.detail;
+        const match = detail.match(/\(([^)]+)\)=\(([^)]+)\)/);
+        const field = match?.[1];  // e.g. 'documento'
+        const value = match?.[2];  // e.g. '12345678'
+        const message = field
+          ? `El campo '${field}' con valor '${value}' ya está registrado.`
+          : 'Ya existe un valor duplicado que viola una restricción única.';
+        throw new BadRequestException(message)
+      }
+      
       if (error.code == 11000) {
         throw new BadRequestException(`${createUserDto.correo} already exists!`)
       }
@@ -151,7 +162,7 @@ export class UserService {
       await queryRunner.commitTransaction();
 
     } catch (error) {
-      console.log(error);
+      console.log("error update active: ", error);
       await queryRunner.rollbackTransaction();
       throw Error(error.message);
     } finally {
@@ -193,7 +204,7 @@ export class UserService {
       await queryRunner.commitTransaction();
 
     } catch (error) {
-      console.log(error);
+      console.log("error update: ", error);
       await queryRunner.rollbackTransaction();
       throw Error(error.message);
     } finally {
