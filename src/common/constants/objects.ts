@@ -110,4 +110,16 @@ export class Objects {
       id: 3, name: 'Ajuste'
     }
   }
+
+  static Colores = {
+    PREDETERMINADO: {
+      id: 1, name: 'Predeterminado'
+    }
+  }
+
+  static Tallas = {
+    PREDETERMINADO: {
+      id: 1, name: 'Predeterminado'
+    }
+  }
 }

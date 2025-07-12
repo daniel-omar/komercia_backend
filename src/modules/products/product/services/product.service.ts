@@ -18,6 +18,7 @@ import { DateTime } from 'luxon';
 import { FilterProductsDto } from '../dto/filter-products.dto';
 import { FilterProductsWithPaginationDto } from '../dto/filter-products-with-pagination.dto';
 import { PaginationService } from '@common/services/pagination.service';
+import { Objects } from '@common/constants/objects';
 @Injectable()
 export class ProductService {
 
@@ -228,6 +229,18 @@ export class ProductService {
 
       if (saveResponse.errors) throw Error(saveResponse.errors);
       console.log(saveResponse);
+
+      const saveVariantResponse = await this.productDao.saveVariant({
+        id_producto: saveResponse.data!.id_producto,
+        id_talla: Objects.Tallas.PREDETERMINADO.id,
+        id_color: Objects.Colores.PREDETERMINADO.id,
+        cantidad: 0,
+        id_usuario_registro
+      }, queryRunner);
+      console.log(saveResponse);
+
+      if (saveVariantResponse.errors) throw Error(saveResponse.errors);
+      console.log(saveVariantResponse);
 
       await queryRunner.commitTransaction();
 

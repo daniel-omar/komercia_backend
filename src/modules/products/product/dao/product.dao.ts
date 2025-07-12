@@ -271,11 +271,11 @@ export class ProductDao {
     if (!connection) connection = this.connection;
     try {
 
-      const { id_usuario_registro, id_producto, id_talla, id_color } = body;
+      const { id_usuario_registro, id_producto, id_talla, id_color, cantidad } = body;
       const response = await connection.query(`
-      insert into productos_variantes(id_producto,id_talla,id_color,id_usuario_registro)
-      values($1,$2,$3,$4)
-      returning id_producto_variante,codigo_producto_variante;`, [id_producto, id_talla, id_color, id_usuario_registro]);
+      insert into productos_variantes(id_producto,id_talla,id_color,cantidad,id_usuario_registro)
+      values($1,$2,$3,$4,$5)
+      returning id_producto_variante,codigo_producto_variante;`, [id_producto, id_talla, id_color, cantidad, id_usuario_registro]);
 
       return {
         message: 'save variant success',
